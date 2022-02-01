@@ -1,0 +1,7 @@
+os
+pandas
+datetime
+re
+string
+shutil
+fpdf
