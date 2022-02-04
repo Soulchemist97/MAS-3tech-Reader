@@ -1,9 +1,10 @@
-#!/usr/bin/env python
-# coding: utf-8
-
 # # Eigenschaften der Automaten Dateien
 
+## https://github.com/Soulchemist97/MAS3-Reader ##
+
 ## Benötigte Module laden ##
+from ast import Continue
+from msilib.schema import Error
 import os   # Anwählen von Ordnern
 import pandas as pd  # Tabellen-Modul
 
@@ -18,7 +19,7 @@ try:
 except:
     print("Fehlendes PDF-Modul: FPDF")
 
-#os.chdir(r"C:\Users\Janni\OneDrive\Python Stuff\Projekte\Automaten-Daten") #Definiere den Ordner
+#os.chdir(r"C:\Users\Janni\OneDrive\Python Stuff\Projekte\Automaten-Daten") #Definiere den Ausgangs-Ordner
 
 
 def create_Ordner(Ordner):
@@ -38,7 +39,10 @@ def create_Ordner(Ordner):
 
 def DeleteEmptyFolder(Pfad):
     """
-    Löscht Ordner, sofern Leer
+    Löscht leere UnterOrdner:
+    1. Checkt ob Ordner existiert
+    2. Checkt auf Unterordner
+    3. Wenn Unterornder Leer sind, werden sie gelöscht
     """
     FolderExists = os.path.isdir(Pfad)
     if FolderExists:
@@ -46,12 +50,16 @@ def DeleteEmptyFolder(Pfad):
 
         for sub in SubFolder:
             SubFolder_Path = os.path.join(Pfad, sub)
+            ##Skippen bei Dateien
+            CheckForFile = os.path.isfile(SubFolder_Path)
+            if CheckForFile:
+                continue
+
             SubFolderExists = os.path.isdir(SubFolder_Path)
             FolderIsEmpty = True if len(os.listdir(SubFolder_Path)) == 0 else False  
             if SubFolderExists & FolderIsEmpty :
                 shutil.rmtree(SubFolder_Path)
                 print(SubFolder_Path,"Deleted")
-
 
 
 
@@ -66,8 +74,7 @@ Regex_Patterns = {
 "Geld":r"(- |-| |-  |)(\d{6}|\d{5}|\d{4}|\d{3}|\d{2}|\d{1}),\d{2}"}
 
 
-
-def Extract_Value(Wort,Regex_Pattern,Lines,print=True):
+def Extract_Value(Wort,Regex_Pattern,Lines):
     """
     Wort in Zeile suchen und aus dieser Zeile nach einem RegEx-Pattern den Wert erhalten
     """
@@ -208,7 +215,7 @@ class Rechnung():
     
     def __repr__(self):
         return self.Dateiname
-    
+
     def open(self): #Datei öffnen
         os.startfile(self.Pfad)
         
@@ -282,20 +289,33 @@ class Aufstellort():
         self.df = pd.DataFrame(self.dataset)
         return self.df
     
-    def __init__(self,Ort):
-        self.Ort = Ort 
-        self.Input = os.path.join(Input_dir,Ort)
+    def __init__(self,Ort=None,Pfad=None):
+        
+        if Ort == None and Pfad == None:
+            OrtError = "Ort in Input oder Ordnerpfad benötigt"
+            raise ValueError(OrtError)
+        
+        if Pfad == None:
+            self.Ort = Ort 
+            self.Input = os.path.join(Input_dir,self.Ort)
+        elif Pfad != None:
+            self.Input=Pfad
+            self.Ort = Pfad.split("\\")[-1]
 
-        # SubFolder_exists = os.path.isdir(os.path.join(Ort,"Kass-Daten"))
-        # if SubFolder_exists:
-            # self.Input = os.path.join(Input_dir,Ort,"Kass-Daten")
+        
+        DeleteEmptyFolder(os.path.join(*self.Input.split("\\"))) #Löscht Unterordner wenn Leer
 
-        self.Output = os.path.join(Output_dir,Ort) # Ausgabe-Ordner
+        SubFolder_exists = os.path.isdir(os.path.join(self.Input,"Kass-Daten"))
+   
+        if SubFolder_exists:
+            self.Input = os.path.join(Input_dir,self.Ort,"Kass-Daten")
+
+        self.Output = os.path.join(Output_dir,self.Ort) # Ausgabe-Ordner
         self.Dateien = os.listdir(self.Input) #Liste aller Dateien
         Pfade = [os.path.join(self.Input,Rechnung) for Rechnung in self.Dateien]
         
         ## Liste aller Klassen-Objekte ##
-        self.Rechnungen = [Rechnung(Ort,Quittung) for Quittung in Pfade]
+        self.Rechnungen = [Rechnung(self.Ort,Quittung) for Quittung in Pfade]
         
         self.Auflisten() #Listen aller Eigenschaften erstellen
         self.dataframe() #Dataframe erstellen
@@ -312,6 +332,9 @@ class Aufstellort():
       
     def __repr__(self):
         return self.Ort
+
+    def __iter__(self): #Ausgabe als Liste bzw. Iterierbarkeit
+        return iter(self.Rechnungen)
       
     def Verschieben(self,Loeschen="n",remove="n"):
         
