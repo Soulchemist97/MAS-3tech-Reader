@@ -1,7 +1,11 @@
 # **M**erkur **A**uslese **S**ystem (**MAS**-3 Tech)
 
+
 Dateien aus dem MAS-3 Tech (.ACK) 
-können mit diesem Tool ausgelesen, systematisch umbenannt und in PDF umgewandelt werden und wichtige Daten in einer Excel-Tabelle ausgegeben.  
+können mit diesem Tool ausgelesen, systematisch umbenannt, in PDFs umgewandelt und wichtige Daten in einer Excel-Tabelle ausgegeben werden.  
+
+Beachte es gibt keinerlei direkte Verbindung zur Gauselmann Group und Ich übernehme keine Haftung für gelöschte Daten bei falscher Nutzung des Skripts.
+
 
 ## Features: 
 - Automatische Bennennung der Rechnungen in: 
@@ -19,6 +23,13 @@ Aufstellort [Anfangsdatum-Auslesedatum](A #Ausdrucknr (#Zulassungsnr).ACK
    - Kopieren: Kopiert die Dateien in umbenannter Form in Output, aber gibt Fehler bei doppelten Quittungen
    - Nichts: Indiziert Dateien für Excel Ausgabe ohne Verschiebung oder Umbennenung 
    3.  Save as Excel-File: Speichern aller Infos in Excel-Tabellen im Ordner Zusammenfassungen/Aufstellort.xlsx
+
+
+| Aufstellort | Ausdruck_Nr | Zulassungsnummer | Geraetetyp | Anfangsdatum | Enddatum   | Ablaufdatum | Saldo1 | Saldo2 | Einsaetze | Gewinne |
+|-------------|-------------|------------------|------------|--------------|------------|-------------|--------|--------|-----------|---------|
+| Bar-Name    | A 008       | 123456789        | M. MULTI   | 01.01.2020   | 01.02.2020 | 2023/05     | 1215,4 | 1433,8 | 11059,3   | -9843,9 |
+  
+
    4.  Save Database: Speichert alle Aufstellortobjekte als Pickle Datei ab. (Experimentell bisher) 
 
 
