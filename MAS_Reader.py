@@ -3,8 +3,6 @@
 ## https://github.com/Soulchemist97/MAS3-Reader ##
 
 ## Benötigte Module laden ##
-from ast import Continue
-from msilib.schema import Error
 import os   # Anwählen von Ordnern
 import pandas as pd  # Tabellen-Modul
 
