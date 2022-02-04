@@ -51,12 +51,12 @@ Codebeispiel:
 Quittung = Rechnung("Aufstellortname","Pfad")
 ```
 
-Liest Rechnunsdatei aus Aufstellort/Dateiname.ACK aus.
+Liest Rechnungsdatei aus Aufstellort/Dateiname.ACK aus.
 
 
 ## Aufstellort
-Klassenobjekt mit allen Rechnungsobjekten in Input/Aufstellort
+Klassenobjekt mit allen Rechnungsobjekten in Input/Aufstellort oder Alternative direkt über Pfad = Ordner
 
 ```
-Ort1 = Aufstellort("Aufstellortname")
+Ort1 = Aufstellort("Aufstellortname",Pfad=Ordnerpfad)
 ```
