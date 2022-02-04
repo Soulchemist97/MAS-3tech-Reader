@@ -51,7 +51,7 @@ Codebeispiel:
 Quittung = Rechnung("Aufstellortname","Pfad")
 ```
 
-Liest Rechnungsdatei aus Aufstellort/Dateiname.ACK aus.
+Liest Rechnungsdatei aus Pfad(../Dateiname.ACK) mit dem Angegebenen Aufstellort aus.
 
 
 ## Aufstellort
