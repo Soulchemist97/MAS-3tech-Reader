@@ -1,5 +1,7 @@
-# **M**erkur **A**uslese **S**ystem (**MAS**-3 Tech)
 
+![MAS Reader Logo](https://github.com/Soulchemist97/MAS3-Reader/blob/main/MAS_Reader_Logo.png?raw=true)
+
+# **M**erkur **A**uslese **S**ystem (**MAS**-3 Tech)
 
 Dateien aus dem MAS-3 Tech (.ACK) 
 können mit diesem Tool ausgelesen, systematisch umbenannt, in PDFs umgewandelt und wichtige Daten in einer Excel-Tabelle ausgegeben werden.  
