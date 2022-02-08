@@ -16,10 +16,10 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QHeaderView, QMainWindow,
-    QMenu, QMenuBar, QPushButton, QRadioButton,
-    QSizePolicy, QStatusBar, QTextEdit, QTreeWidget,
-    QTreeWidgetItem, QWidget)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QGraphicsView, QHeaderView,
+    QMainWindow, QMenu, QMenuBar, QPushButton,
+    QRadioButton, QSizePolicy, QStatusBar, QTextEdit,
+    QTreeWidget, QTreeWidgetItem, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -53,10 +53,16 @@ class Ui_MainWindow(object):
         self.StartButton.setGeometry(QRect(30, 380, 171, 71))
         self.PathBox = QTextEdit(self.centralwidget)
         self.PathBox.setObjectName(u"PathBox")
-        self.PathBox.setGeometry(QRect(40, 80, 771, 41))
+        self.PathBox.setGeometry(QRect(40, 90, 771, 41))
         self.SingleBillBox = QCheckBox(self.centralwidget)
         self.SingleBillBox.setObjectName(u"SingleBillBox")
         self.SingleBillBox.setGeometry(QRect(40, 40, 161, 26))
+        self.LogoBox = QGraphicsView(self.centralwidget)
+        self.LogoBox.setObjectName(u"LogoBox")
+        self.LogoBox.setGeometry(QRect(690, 10, 121, 71))
+        self.PrintBox = QCheckBox(self.centralwidget)
+        self.PrintBox.setObjectName(u"PrintBox")
+        self.PrintBox.setGeometry(QRect(220, 400, 61, 26))
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
@@ -94,6 +100,7 @@ class Ui_MainWindow(object):
 "</style></head><body style=\" font-family:'Segoe UI'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Input</span></p></body></html>", None))
         self.SingleBillBox.setText(QCoreApplication.translate("MainWindow", u"Einzelne Rechnung", None))
+        self.PrintBox.setText(QCoreApplication.translate("MainWindow", u"Print", None))
         self.menuMAS_Reader.setTitle(QCoreApplication.translate("MainWindow", u"MAS Reader", None))
     # retranslateUi
 
