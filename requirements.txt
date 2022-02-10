@@ -1,7 +1,4 @@
-os
-pandas
 datetime
-re
-string
-shutil
+pandas
 fpdf
+PyQt5
