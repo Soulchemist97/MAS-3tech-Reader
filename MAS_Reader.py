@@ -17,7 +17,6 @@ try:
 except:
     print("Fehlendes PDF-Modul: FPDF")
 
-#os.chdir(r"C:\Users\Janni\OneDrive\Python Stuff\Projekte\Automaten-Daten") #Definiere den Ausgangs-Ordner
 
 
 def create_Ordner(Ordner: str):
