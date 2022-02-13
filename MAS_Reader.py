@@ -437,34 +437,32 @@ Output_dir = create_Ordner("Output") # Output
 
 if __name__ == "__main__":
 
-    Dict_Bool={"y":True,"n":False,}
-
     # Aufstellorte Indizieren
     Orte = os.listdir(Input_dir)
     Locations=[Aufstellort(Ort) for Ort in Orte]
 
     # Eingabeaufforderungen
-    Print_Frage = Dict_Bool[input("Dateiinfos im Terminal ausgeben? (y): ").lower()]
+    Print_Frage = input("Dateiinfos im Terminal ausgeben? (y): ")
 
-    if Print_Frage == True:
+    if Print_Frage == "y":
         for Loc in Locations:
             print(Loc)
 
     Remove_Frage = input("Verschieben (y), Kopieren (c), Nichts (n) : ")
-    Excel_Frage = Dict_Bool[input("Save Excel Files? y:  ").lower()]
-    PDF_Frage = Dict_Bool[input("Save as PDF? (y) :  ").lower()]
-    Store_Frage = input("Save Databse? (y) :  ").lower()
+    Excel_Frage = input("Save Excel Files? y:  ")
+    PDF_Frage = input("Save as PDF? (y) :  ")
+    Store_Frage = input("Save Database? (y) :  ")
 
 
     for Location in Locations:
         # Location.Rechnungen
 
-        if PDF_Frage == True:
+        if PDF_Frage == "y":
             Location.pdf(cut="Y")
 
         if Remove_Frage == "y" or Remove_Frage == "c": 
          Location.Verschieben(remove=Remove_Frage)
-        if Excel_Frage == True:
+        if Excel_Frage == "y":
             Location.Excel()
         if Store_Frage == "y":
             Location.store()
