@@ -246,9 +246,12 @@ class Rechnung():
         pdf.output(PDF_Pfad)  
         lines.close()
 
-    def PDFcut(self):
+    def PDFcut(self,Zeilen:int=100):
         """
-        Erstellt PDF der ersten 100 Zeilen
+        Erstellt PDF der ersten x Zeilen
+
+        Args:
+            Zeilen (int, optional): Zeilen des PDFs. Defaults to 100.
         """
         pdf = FPDF() #PDF-Klasse
         pdf.add_page() 
@@ -257,7 +260,7 @@ class Rechnung():
         lines = open(self.Pfad,"r",encoding='utf8', errors='ignore')
         
         Strings = [L for L in lines]
-        Strings = Strings[0:100]
+        Strings = Strings[0:Zeilen]
 
         for line in Strings: 
             pdf.cell(180, 4, txt = line, ln = 1, align = 'L')  # Width, height,
@@ -391,14 +394,17 @@ class Aufstellort():
                 print(Rechnung, "Index-Error")
                 pass
 
-    def pdf(self,cut="Y"):
+    def pdf(self,cut=True,N_Zeilen:int=100):
         """
         Text Dateien der Quiitungen als PDF ausgeben
+        Args:
+            cut (bool, optional): Ab einer Zeile geschnitten oder vollständig umgewandelt. Defaults to True.
+            N_Zeilen (int, optional): Anzahl Zeilen, bis zu der abgeschnitten wird. Defaults to 100.
         """
         for Quittung in self.Rechnungen:
-            if cut == "Y":
-                Quittung.PDFcut()
-            elif cut != "Y":
+            if cut == True:
+                Quittung.PDFcut(Zeilen=N_Zeilen)
+            elif cut != True:
                 Quittung.pdf()
     
     def Excel(self):
@@ -421,7 +427,7 @@ class Aufstellort():
             pickle.dump(self,Out_File)
 
         """
-        with open("BarDaRosa_Database","rb") as in_file:
+        with open("Aufstellort_Database","rb") as in_file:
             new_Loc = pickle.load(in_file)
         """
 
@@ -456,7 +462,7 @@ if __name__ == "__main__":
     for Location in Locations:
 
         if PDF_Frage == "y":
-            Location.pdf(cut="Y")
+            Location.pdf(cut=True)
 
         if Remove_Frage == "y" or Remove_Frage == "c": 
          Location.Verschieben(remove=Remove_Frage)
