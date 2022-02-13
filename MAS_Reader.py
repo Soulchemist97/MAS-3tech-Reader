@@ -3,8 +3,7 @@
 ## https://github.com/Soulchemist97/MAS3-Reader ##
 
 ## Benötigte Module laden ##
-import os
-from xmlrpc.client import boolean   # Anwählen von Ordnern
+import os     # Anwählen von Ordnern
 import pandas as pd  # Tabellen-Modul
 
 from datetime import datetime as dt #Formatiert Datumswerte
