@@ -3,7 +3,8 @@
 ## https://github.com/Soulchemist97/MAS3-Reader ##
 
 ## Benötigte Module laden ##
-import os   # Anwählen von Ordnern
+import os
+from xmlrpc.client import boolean   # Anwählen von Ordnern
 import pandas as pd  # Tabellen-Modul
 
 from datetime import datetime as dt #Formatiert Datumswerte
@@ -20,9 +21,14 @@ except:
 #os.chdir(r"C:\Users\Janni\OneDrive\Python Stuff\Projekte\Automaten-Daten") #Definiere den Ausgangs-Ordner
 
 
-def create_Ordner(Ordner):
-    """
-    Checkt auf vorhandene Ordner und erstellt ggf. neuen Ordner
+def create_Ordner(Ordner: str):
+    """Checkt auf vorhandene Ordner und erstellt ggf. neuen Ordner
+
+    Args:
+        Ordner (str): Ordnerpfad zum neuen oder bereits existierenden Ordner
+
+    Returns:
+        Verzeichnis: Ordnerpfad als String
     """
     Verzeichnis = Ordner  # Verzeichnisse zusammensetzen ohne + "/"
     Vorhanden = os.path.isdir(Verzeichnis) #Prüfen ob Vorhanden
@@ -35,12 +41,15 @@ def create_Ordner(Ordner):
     return Verzeichnis
 
 
-def DeleteEmptyFolder(Pfad):
+def DeleteEmptyFolder(Pfad: str):
     """
     Löscht leere UnterOrdner:
     1. Checkt ob Ordner existiert
     2. Checkt auf Unterordner
     3. Wenn Unterornder Leer sind, werden sie gelöscht
+
+    Args:
+        Pfad (str): Pfad des übergeordneten Ordners. Löscht alle leeren Unterordner
     """
     FolderExists = os.path.isdir(Pfad)
     if FolderExists:
@@ -72,7 +81,7 @@ Regex_Patterns = {
 "Geld":r"(- |-| |-  |)(\d{6}|\d{5}|\d{4}|\d{3}|\d{2}|\d{1}),\d{2}"}
 
 
-def Extract_Value(Wort,Regex_Pattern,Lines):
+def Extract_Value(Wort: str,Regex_Pattern: str,Lines):
     """
     Wort in Zeile suchen und aus dieser Zeile nach einem RegEx-Pattern den Wert erhalten
     """
@@ -84,9 +93,17 @@ def Extract_Value(Wort,Regex_Pattern,Lines):
                 return Z[0]
 
 
-def Extract_OtherValue(Wort,Lines,Versatz=1,Remove_Spaces=True):
-    """
-    Wort in Zeile suchen und aus anderer Zeile den Wert erhalten
+def Extract_OtherValue(Wort:str,Lines,Versatz: int =1,Remove_Spaces: bool =True):
+    """Wort in Zeile suchen und aus anderer Zeile den Wert erhalten
+
+    Args:
+        Wort (str): Wort in bestimmter Zeile.
+        Lines ([type]): [description]
+        Versatz (int, optional): Zeilenentfernung von der Zeile per Wort. Defaults to 1.
+        Remove_Spaces (bool, optional): Leerzeichen entfernen oder nicht. Defaults to True.
+
+    Returns:
+        Wert: Gibt Wert nach Regex-Pattern aus.
     """
     index=0 #Zeilenindex
     for i in Lines:
@@ -193,7 +210,6 @@ class Rechnung():
         self.Dateiname=Dateiname
 
 
-
         fp.close() #Schließen der Datei
 
         return Dateiname
@@ -287,7 +303,16 @@ class Aufstellort():
         self.df = pd.DataFrame(self.dataset)
         return self.df
     
-    def __init__(self,Ort=None,Pfad=None):
+    def __init__(self,Ort: str =None,Pfad: str =None):
+        """Initialisiert Aufstellort mit vollständigem Pfad oder dem Namen im Ordner INPUT.
+
+        Args:
+            Ort (str, optional): Name des Ordners in  INPUT. Defaults to None.
+            Pfad (str, optional): Ordnerpfad des Aufstellorts. Defaults to None.
+
+        Raises:
+            ValueError: Fehler, wenn keine der beiden Werte gesetzt wurde.
+        """
         
         if Ort == None and Pfad == None:
             OrtError = "Ort in Input oder Ordnerpfad benötigt"
@@ -412,32 +437,34 @@ Output_dir = create_Ordner("Output") # Output
 
 if __name__ == "__main__":
 
+    Dict_Bool={"y":True,"n":False,}
+
     # Aufstellorte Indizieren
     Orte = os.listdir(Input_dir)
     Locations=[Aufstellort(Ort) for Ort in Orte]
 
     # Eingabeaufforderungen
-    Print_Frage = input("Dateiinfos im Terminal ausgeben? (y): ")
+    Print_Frage = Dict_Bool[input("Dateiinfos im Terminal ausgeben? (y): ").lower()]
 
-    if Print_Frage == "y":
+    if Print_Frage == True:
         for Loc in Locations:
             print(Loc)
 
     Remove_Frage = input("Verschieben (y), Kopieren (c), Nichts (n) : ")
-    Excel_Frage = input("Save Excel Files? y:  ")
-    PDF_Frage = input("Save as PDF? (y) :  ")
-    Store_Frage = input("Save Database? (y) :  ")
+    Excel_Frage = Dict_Bool[input("Save Excel Files? y:  ").lower()]
+    PDF_Frage = Dict_Bool[input("Save as PDF? (y) :  ").lower()]
+    Store_Frage = input("Save Databse? (y) :  ").lower()
 
 
     for Location in Locations:
         # Location.Rechnungen
 
-        if PDF_Frage == "y":
+        if PDF_Frage == True:
             Location.pdf(cut="Y")
 
         if Remove_Frage == "y" or Remove_Frage == "c": 
          Location.Verschieben(remove=Remove_Frage)
-        if Excel_Frage == "y":
+        if Excel_Frage == True:
             Location.Excel()
         if Store_Frage == "y":
             Location.store()
