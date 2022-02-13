@@ -6,6 +6,7 @@
 *.rar
 *_Database
 
+*.qt_for_python
 
 # Editors
 .vscode/

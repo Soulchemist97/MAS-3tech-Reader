@@ -178,15 +178,18 @@ class Rechnung():
         ##################
         ##Datum beziehen##
         ##################
+        """
+        Sucht nach Datums-pattern in der Datei und formatiert sie als Datetime Objekt.
+        3 Daten werden gefunden und das 2. & 3. als Anfangs und Enddatum ausgegeben. 
+        """
 
         Daten = []
-    
+
         for i in ap:
             Date = None    
             Long,Short = None,None
             Long=re.search(Regex_Patterns["Datum"],i)
             Short=re.search(Regex_Patterns["Date"],i)
-
             
             if Long != None:
                 Date = dt.strptime(Long[0], "%d.%m.%Y") 
@@ -208,7 +211,6 @@ class Rechnung():
         
         Dateiname = f"{self.Ort} [{self.Datum_Anfang}-{self.Datum_Ende}]({str(self.Ausdruck_Nr)})({str(self.Zulassung)}).ACK"
         self.Dateiname=Dateiname
-
 
         fp.close() #Schließen der Datei
 
@@ -264,7 +266,6 @@ class Rechnung():
         PDF_Pfad = os.path.join(create_Ordner(r"pdf/" +self.Ort),self.Dateiname.replace(".ACK",".pdf"))
         pdf.output(PDF_Pfad)  
         lines.close()
-
 
 
 
@@ -455,7 +456,6 @@ if __name__ == "__main__":
 
 
     for Location in Locations:
-        # Location.Rechnungen
 
         if PDF_Frage == "y":
             Location.pdf(cut="Y")
