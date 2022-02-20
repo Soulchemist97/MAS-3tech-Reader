@@ -432,15 +432,12 @@ class Aufstellort():
         """
 
 
-"""
-Ordnerpfade zum befüllen mit Quittungen
-"""
-
-Input_dir = create_Ordner("Input")  #"Input"
-Output_dir = create_Ordner("Output") # Output
-
-
 if __name__ == "__main__":
+
+    ## Ordnerpfade zum befüllen mit Quittungen ##
+    Input_dir = create_Ordner("Input")  #"Input"
+    Output_dir = create_Ordner("Output") # Output
+
 
     # Aufstellorte Indizieren
     Orte = os.listdir(Input_dir)

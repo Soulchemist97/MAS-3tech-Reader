@@ -3,6 +3,7 @@ from GUI.form import Ui_MainWindow
 
 import sys
 from PyQt5 import QtWidgets
+from PyQt5.QtGui import QIcon
 
 app = QtWidgets.QApplication(sys.argv)
 
@@ -50,6 +51,10 @@ def Start_Button_Clicked():
     print(ui_window.PathBox.toPlainText())
 
     Input_dir = ui_window.PathBox.toPlainText()
+    create_Ordner(Input_dir)
+
+    Output_dir = ui_window.OutputBox.toPlainText()
+    create_Ordner(Output_dir)
 
     # Aufstellorte Indizieren
     Orte = os.listdir(Input_dir)
@@ -81,7 +86,13 @@ def Start_Button_Clicked():
             Location.Verschieben(remove="y")
 
 
+ui_window.StartButton.setIcon(QIcon("Logo\MAS_Reader_Logo.png")) #Logo zum Knopf hinzufügen
+
 ui_window.StartButton.clicked.connect(Start_Button_Clicked)
+
+
+Output_dir = "Output"
+create_Ordner(Output_dir)
 
 
 if __name__ =="__main__":
