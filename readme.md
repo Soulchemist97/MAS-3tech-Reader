@@ -1,5 +1,7 @@
 
-![MAS Reader Logo](https://github.com/Soulchemist97/MAS3-Reader/blob/main/MAS_Reader_Logo.png?raw=true)
+![MAS Reader Logo](https://github.com/Soulchemist97/MAS3-Reader/blob/main/Logo/MAS_Reader_Logo.png?raw=true)
+
+
 
 # **M**erkur **A**uslese **S**ystem (**MAS**-3 Tech)
 
