@@ -1,6 +1,6 @@
 # # Eigenschaften der Automaten Dateien
 
-## https://github.com/Soulchemist97/MAS3-Reader ##
+## https://github.com/Soulchemist97/MAS-3tech-Reader ##
 
 ## Benötigte Module laden ##
 import os     # Anwählen von Ordnern
@@ -10,7 +10,7 @@ from datetime import datetime as dt #Formatiert Datumswerte
 import re #RegEx Sucht Patterns in Strings
 from string import whitespace #Leerzeichen entfernen
 
-import shutil # Kopieren in Ordner
+import shutil # Kopieren, Verschieben in andere Ordner
 try:
     from fpdf import FPDF #PDF Creator 
     # PDF-Dokumentation https://pyfpdf.readthedocs.io/en/latest/Tutorial/index.html
@@ -96,9 +96,9 @@ def Extract_OtherValue(Wort:str,Lines,Versatz: int =1,Remove_Spaces: bool =True)
 
     Args:
         Wort (str): Wort in bestimmter Zeile.
-        Lines ([type]): [description]
-        Versatz (int, optional): Zeilenentfernung von der Zeile per Wort. Defaults to 1.
-        Remove_Spaces (bool, optional): Leerzeichen entfernen oder nicht. Defaults to True.
+        Lines (list): Liste der verwendeten Zeilen. Der zu durchsuchende Text
+        Versatz (int, optional): Zeilenentfernung von der Zeile per Wort. Standard = 1.
+        Remove_Spaces (bool, optional): Leerzeichen entfernen oder nicht. Standard = True.
 
     Returns:
         Wert: Gibt Wert nach Regex-Pattern aus.
