@@ -131,6 +131,7 @@ class Rechnung():
     def __init__(self,Aufstellort,Pfad):
         self.Ort = Aufstellort
         self.Pfad = Pfad #os.path.join(Pfad,Datei)
+        _, self.FileExtension = os.path.splitext(Pfad)
         self.Auslesen(self.Pfad)
         self.old_name = Pfad.split("\\")[-1]#Datei
 
@@ -207,7 +208,7 @@ class Rechnung():
         self.Geraetetyp= Extract_OtherValue(Regex_Patterns["Geraetetyp"],Lines=ap,Versatz=1)
 
         
-        Dateiname = f"{self.Ort} [{self.Datum_Anfang}-{self.Datum_Ende}]({str(self.Ausdruck_Nr)})({str(self.Zulassung)}).ACK"
+        Dateiname = f"{self.Ort} [{self.Datum_Anfang}-{self.Datum_Ende}]({str(self.Ausdruck_Nr)})({str(self.Zulassung)}){self.FileExtension}"
         self.Dateiname=Dateiname
 
         fp.close() #Schließen der Datei
@@ -242,9 +243,10 @@ class Rechnung():
         
         for line in lines: 
             pdf.cell(180, 4, txt = line, ln = 1, align = 'L')  # Width, height,
-        PDF_Pfad = os.path.join(create_Ordner(r"pdf/" +self.Ort),self.Dateiname.replace(".ACK",".pdf"))
+        PDF_Pfad = os.path.join(create_Ordner(r"pdf/" +self.Ort),self.Dateiname.replace(self.FileExtension,".pdf"))
         pdf.output(PDF_Pfad)  
         lines.close()
+        return pdf
 
     def PDFcut(self,Zeilen:int=100):
         """
@@ -264,7 +266,7 @@ class Rechnung():
 
         for line in Strings: 
             pdf.cell(180, 4, txt = line, ln = 1, align = 'L')  # Width, height,
-        PDF_Pfad = os.path.join(create_Ordner(r"pdf/" +self.Ort),self.Dateiname.replace(".ACK",".pdf"))
+        PDF_Pfad = os.path.join(create_Ordner(r"pdf/" +self.Ort),self.Dateiname.replace(self.FileExtension,".pdf"))
         pdf.output(PDF_Pfad)  
         lines.close()
 
@@ -459,7 +461,7 @@ if __name__ == "__main__":
     for Location in Locations:
 
         if PDF_Frage == "y":
-            Location.pdf(cut=True)
+            Location.pdf(cut=True,N_Zeilen=64)
 
         if Remove_Frage == "y" or Remove_Frage == "c": 
          Location.Verschieben(remove=Remove_Frage)
