@@ -6,6 +6,9 @@
 *.rar
 *_Database
 
+! requirements.txt
+*.txt
+
 *.qt_for_python
 
 # Editors
