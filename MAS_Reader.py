@@ -4,6 +4,7 @@
 
 ## Benötigte Module laden ##
 import os     # Anwählen von Ordnern
+import io     # Arbeiten mit Filestreams
 import pandas as pd  # Tabellen-Modul
 
 from datetime import datetime as dt #Formatiert Datumswerte
@@ -129,36 +130,56 @@ class Rechnung():
 
 
     def __init__(self,Aufstellort,Pfad):
+        """Erstellen eines Rechnungs Objektes
+
+        Args:
+            Aufstellort (str): Name des Aufstellortes bspw. der Bar.
+            Pfad (Str or file-like Object): Dateipfad oder Objekt der open(...)-Funktion
+        """
         self.Ort = Aufstellort
-        self.Pfad = Pfad #os.path.join(Pfad,Datei)
-        _, self.FileExtension = os.path.splitext(Pfad)
-        self.Auslesen(self.Pfad)
-        self.old_name = Pfad.split("\\")[-1]#Datei
 
+        if type(Pfad) != io.TextIOWrapper : # File-like Object 
+            self.Pfad = Pfad
+            Input_File = Pfad
+            FileStreamCheck = False
+        elif type(Pfad) == io.TextIOWrapper:
+            self.Pfad=Pfad.name
+            Input_File = Pfad
+            FileStreamCheck = True
+        
+        self.old_name = os.path.split(self.Pfad)[-1] #Pfad.split("\\")[-1]
+        _, self.FileExtension = os.path.splitext(self.Pfad)
 
-    def Auslesen(self,filepath): #Auslesen der Daten aus Datei, Auflisten der Werte und Ausgabe der Dateiname
+        
+        self.Auslesen(Input_File,FileStreamCheck)
+        
+
+    def Auslesen(self,fileInput,FileStream_Check=False): #Auslesen der Daten aus Datei, Auflisten der Werte und Ausgabe der Dateiname
         """
-        Liest aus verschiedenen Dokumentstrukturen die Daten je Quittung aus.
-        Manche per Fester Zeilenangabe, andere per Wortsuche in gleicher Zeile.
+        Liest aus verschiedenen Dokumentstrukturen die Daten je Quittung aus mittels Regex Patterns.
         """
         
-        ### Datei öffnen und Liste aus Zeilen asugeben
-        fp = open(filepath,"r",encoding='utf8', errors='ignore') # Öffnen der Datei
-        ap = fp.readlines(12000) # Liste aller Zeilen 12000
-        self.ap = ap
-
-        ######### Parameter auslesen ############
+        if FileStream_Check == False: 
+            ### Datei öffnen und Liste aus Zeilen ausgeben
+            File_Obj = open(fileInput,"r",encoding='utf8', errors='ignore') # Öffnen der Datei
+        else:
+            File_Obj = fileInput
         
-        self.Zulassung =  Extract_Value(Wort="ZULASSUNG",Regex_Pattern=Regex_Patterns["Zulassungsnummer"],Lines=ap,)
-        self.Ausdruck_Nr = Extract_Value(Wort="AUSDRUCK",Regex_Pattern=Regex_Patterns["Ausdruck"],Lines=ap,)
+        File_Lines = File_Obj.readlines() # Liste aller Zeilen
+        self.File_Lines = File_Lines
+
+        ######### Parameter auslesen ###########
+        
+        self.Zulassung =  Extract_Value(Wort="ZULASSUNG",Regex_Pattern=Regex_Patterns["Zulassungsnummer"],Lines=File_Lines,)
+        self.Ausdruck_Nr = Extract_Value(Wort="AUSDRUCK",Regex_Pattern=Regex_Patterns["Ausdruck"],Lines=File_Lines,)
         if self.Ausdruck_Nr == None:
-            self.Ausdruck_Nr = Extract_Value(Wort="KOPIE",Regex_Pattern=Regex_Patterns["Ausdruck"],Lines=ap,)
-        self.Ablaufdatum = Extract_Value(Wort="ABLAUF",Regex_Pattern=Regex_Patterns["Ablaufdatum"],Lines=ap,)
+            self.Ausdruck_Nr = Extract_Value(Wort="KOPIE",Regex_Pattern=Regex_Patterns["Ausdruck"],Lines=File_Lines,)
+        self.Ablaufdatum = Extract_Value(Wort="ABLAUF",Regex_Pattern=Regex_Patterns["Ablaufdatum"],Lines=File_Lines,)
 
-        # self.Geraetetyp = Extract_Value(Wort="BAUART",Regex_Pattern=,Lines=ap,)
+        # self.Geraetetyp = Extract_Value(Wort="BAUART",Regex_Pattern=,Lines=File_Lines,)
 
         
-        def MoneyFloat(Wort="GEWINNE" ,Regex_Pattern=Regex_Patterns["Geld"],Lines=ap):
+        def MoneyFloat(Wort="GEWINNE" ,Regex_Pattern=Regex_Patterns["Geld"],Lines=File_Lines):
             Money = Extract_Value(Wort,Regex_Pattern,Lines,)
             if Money != None:
                 Money_wo_spaces=Money.translate({ord(c): None for c in whitespace}) #Spaces entfernen
@@ -168,10 +189,10 @@ class Rechnung():
 
         # Regex SALDO (1) && SALDO (2) checken
 
-        self.Saldo_1 =   MoneyFloat(Wort=" \(1",Regex_Pattern=Regex_Patterns["Geld"],Lines=ap,)
-        self.Saldo_2 =   MoneyFloat(Wort=" \(2",Regex_Pattern=Regex_Patterns["Geld"],Lines=ap,) 
-        self.Einsaetze = MoneyFloat(Wort="EINSAETZE",Regex_Pattern=Regex_Patterns["Geld"],Lines=ap,)
-        self.Gewinne =   MoneyFloat(Wort="GEWINNE" ,Regex_Pattern=Regex_Patterns["Geld"],Lines=ap)
+        self.Saldo_1 =   MoneyFloat(Wort=" \(1",Regex_Pattern=Regex_Patterns["Geld"],Lines=File_Lines,)
+        self.Saldo_2 =   MoneyFloat(Wort=" \(2",Regex_Pattern=Regex_Patterns["Geld"],Lines=File_Lines,) 
+        self.Einsaetze = MoneyFloat(Wort="EINSAETZE",Regex_Pattern=Regex_Patterns["Geld"],Lines=File_Lines,)
+        self.Gewinne =   MoneyFloat(Wort="GEWINNE" ,Regex_Pattern=Regex_Patterns["Geld"],Lines=File_Lines)
                 
 
         ##################
@@ -184,7 +205,7 @@ class Rechnung():
 
         Daten = []
 
-        for i in ap:
+        for i in File_Lines:
             Date = None    
             Long,Short = None,None
             Long=re.search(Regex_Patterns["Datum"],i)
@@ -205,13 +226,14 @@ class Rechnung():
 
         ### Datum ausgelesen ###
 
-        self.Geraetetyp= Extract_OtherValue(Regex_Patterns["Geraetetyp"],Lines=ap,Versatz=1)
+        self.Geraetetyp= Extract_OtherValue(Regex_Patterns["Geraetetyp"],Lines=File_Lines,Versatz=1)
 
         
         Dateiname = f"{self.Ort} [{self.Datum_Anfang}-{self.Datum_Ende}]({str(self.Ausdruck_Nr)})({str(self.Zulassung)}){self.FileExtension}"
         self.Dateiname=Dateiname
 
-        fp.close() #Schließen der Datei
+        if FileStream_Check == False:
+            File_Obj.close() #Schließen der Datei
 
         return Dateiname
 
@@ -219,12 +241,12 @@ class Rechnung():
     def __str__(self):
         
         Str_Box = f"""{self.Dateiname} \n 
-        Ablauf: {self.Ablaufdatum} \n 
-        Saldo 1: {self.Saldo_1} € \n
-        Saldo 2: {self.Saldo_2} € \n
-        Einsaetze: {self.Einsaetze} € \n
-        Gewinne: {self.Gewinne} € \n
-        Geraetetyp: {self.Geraetetyp} \n
+        Ablauf: {self.Ablaufdatum} \r 
+        Saldo 1: {self.Saldo_1} € \r
+        Saldo 2: {self.Saldo_2} € \r
+        Einsaetze: {self.Einsaetze} € \r
+        Gewinne: {self.Gewinne} € \r
+        Geraetetyp: {self.Geraetetyp} \r
         """
         return Str_Box
     
