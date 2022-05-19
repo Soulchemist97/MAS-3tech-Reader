@@ -483,7 +483,7 @@ if __name__ == "__main__":
     for Location in Locations:
 
         if PDF_Frage == "y":
-            Location.pdf(cut=True,N_Zeilen=64)
+            Location.pdf(cut=True,N_Zeilen=100)
 
         if Remove_Frage == "y" or Remove_Frage == "c": 
          Location.Verschieben(remove=Remove_Frage)
