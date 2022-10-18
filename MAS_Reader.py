@@ -80,6 +80,8 @@ Regex_Patterns = {
 "Geld":r"(- |-| |-  |)(\d{6}|\d{5}|\d{4}|\d{3}|\d{2}|\d{1}),\d{2}"}
 
 
+
+
 def Extract_Value(Wort: str,Regex_Pattern: str,Lines):
     """
     Wort in Zeile suchen und aus dieser Zeile nach einem RegEx-Pattern den Wert erhalten
@@ -180,6 +182,16 @@ class Rechnung():
 
         
         def MoneyFloat(Wort="GEWINNE" ,Regex_Pattern=Regex_Patterns["Geld"],Lines=File_Lines):
+            """Search Money values and returns them as float object
+
+            Args:
+                Wort (str, optional): Wort in Zeile der Geldsumme. Defaults to "GEWINNE".
+                Regex_Pattern (_type_, optional): Pattern für Geld. Defaults to Regex_Patterns["Geld"].
+                Lines (_type_, optional): Textzeilen. Defaults to File_Lines.
+
+            Returns:
+                Money_Value (float): Formatted money value
+            """
             Money = Extract_Value(Wort,Regex_Pattern,Lines,)
             if Money != None:
                 Money_wo_spaces=Money.translate({ord(c): None for c in whitespace}) #Spaces entfernen
@@ -198,31 +210,18 @@ class Rechnung():
         ##################
         ##Datum beziehen##
         ##################
-        """
-        Sucht nach Datums-pattern in der Datei und formatiert sie als Datetime Objekt.
-        3 Daten werden gefunden und das 2. & 3. als Anfangs und Enddatum ausgegeben. 
-        """
 
-        Daten = []
 
-        for i in File_Lines:
-            Date = None    
-            Long,Short = None,None
-            Long=re.search(Regex_Patterns["Datum"],i)
-            Short=re.search(Regex_Patterns["Date"],i)
-            
-            if Long != None:
-                Date = dt.strptime(Long[0], "%d.%m.%Y") 
-            elif Short != None:
-                Date = dt.strptime(Short[0], "%d.%m.%y")
+        EndDatum_string = Extract_OtherValue(Wort="KASSIERUNG VOM",Lines=File_Lines,Versatz=2)
+        EndDatum_string = re.search(Regex_Patterns["Datum"],EndDatum_string)
+        
+        AnfangsDatum_String = Extract_OtherValue(Wort="LETZTE KASSIERUNG",Lines=File_Lines,Versatz=2)
+        if AnfangsDatum_String == None:
+            AnfangsDatum_String = Extract_OtherValue(Wort="INBETRIEBNAHME",Lines=File_Lines,Versatz=2)     
 
-            if Date != None:
-                Daten.append(Date.strftime("%d.%m.%Y"))    
+        AnfangsDatum_String = re.search(Regex_Patterns["Datum"],AnfangsDatum_String)
 
-        if len(Daten) >= 3:
-            self.Datum_Anfang,self.Datum_Ende = Daten[2],Daten[1]
-        else:
-            pass
+        self.Datum_Anfang,self.Datum_Ende = AnfangsDatum_String[0] , EndDatum_string[0]
 
         ### Datum ausgelesen ###
 
