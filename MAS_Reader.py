@@ -210,18 +210,20 @@ class Rechnung():
         ##################
         ##Datum beziehen##
         ##################
-
-
-        EndDatum_string = Extract_OtherValue(Wort="KASSIERUNG VOM",Lines=File_Lines,Versatz=2)
-        EndDatum_string = re.search(Regex_Patterns["Datum"],EndDatum_string)
         
-        AnfangsDatum_String = Extract_OtherValue(Wort="LETZTE KASSIERUNG",Lines=File_Lines,Versatz=2)
-        if AnfangsDatum_String == None:
-            AnfangsDatum_String = Extract_OtherValue(Wort="INBETRIEBNAHME",Lines=File_Lines,Versatz=2)     
+        try:
+            EndDatum_string = Extract_OtherValue(Wort="KASSIERUNG VOM",Lines=File_Lines,Versatz=2)
+            EndDatum_string = re.search(Regex_Patterns["Datum"],EndDatum_string)
+            
+            AnfangsDatum_String = Extract_OtherValue(Wort="LETZTE KASSIERUNG",Lines=File_Lines,Versatz=2)
+            if AnfangsDatum_String == None:
+                AnfangsDatum_String = Extract_OtherValue(Wort="INBETRIEBNAHME",Lines=File_Lines,Versatz=2)     
 
-        AnfangsDatum_String = re.search(Regex_Patterns["Datum"],AnfangsDatum_String)
+            AnfangsDatum_String = re.search(Regex_Patterns["Datum"],AnfangsDatum_String)
 
-        self.Datum_Anfang,self.Datum_Ende = AnfangsDatum_String[0] , EndDatum_string[0]
+            self.Datum_Anfang,self.Datum_Ende = AnfangsDatum_String[0] , EndDatum_string[0]
+        except:
+            print(fileInput,"Datum konnte nicht ausgelesen werden")
 
         ### Datum ausgelesen ###
 
