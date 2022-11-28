@@ -204,7 +204,9 @@ class Rechnung():
         self.Saldo_1 =   MoneyFloat(Wort=" \(1",Regex_Pattern=Regex_Patterns["Geld"],Lines=File_Lines,)
         self.Saldo_2 =   MoneyFloat(Wort=" \(2",Regex_Pattern=Regex_Patterns["Geld"],Lines=File_Lines,) 
         self.Einsaetze = MoneyFloat(Wort="EINSAETZE",Regex_Pattern=Regex_Patterns["Geld"],Lines=File_Lines,)
-        self.Gewinne =   MoneyFloat(Wort="GEWINNE" ,Regex_Pattern=Regex_Patterns["Geld"],Lines=File_Lines)
+        self.Gewinne =   MoneyFloat(Wort="GEWINNE", Regex_Pattern=Regex_Patterns["Geld"],Lines=File_Lines)
+        self.Einwurf = MoneyFloat(Wort = "EINWURF",Regex_Pattern=Regex_Patterns["Geld"],Lines=File_Lines)
+        self.Auswurf = MoneyFloat(Wort = "AUSWURF",Regex_Pattern=Regex_Patterns["Geld"],Lines=File_Lines)
                 
 
         ##################
@@ -247,8 +249,11 @@ class Rechnung():
         Saldo 2: {self.Saldo_2} € \r
         Einsaetze: {self.Einsaetze} € \r
         Gewinne: {self.Gewinne} € \r
+        Einwurf: {self.Einwurf} \r
+        Auswurf: {self.Auswurf} \r
         Geraetetyp: {self.Geraetetyp} \r
         """
+
         return Str_Box
     
     def __repr__(self):
@@ -314,13 +319,17 @@ class Aufstellort():
         self.Saldo_2_Liste= [Rechnung.Saldo_2 for Rechnung in self.Rechnungen]
         self.Einsaetze = [Rechnung.Einsaetze for Rechnung in self.Rechnungen]
         self.Gewinne = [Rechnung.Gewinne for Rechnung in self.Rechnungen]
+        self.Einwuerfe = [Rechnung.Einwurf for Rechnung in self.Rechnungen]
+        self.Auswuerfe = [Rechnung.Auswurf for Rechnung in self.Rechnungen]
 
         #Dictionary für DataFrame
         self.dataset={"Aufstellort":self.Aufstellorte,"Ausdruck_Nr": self.Ausdruck_Nummern, 
                                 "Zulassungsnummer": self.Zulassungen,"Geraetetyp":self.Geraetetypen,
                                 "Anfangsdatum":self.Daten_Anfang,"Enddatum":self.Daten_Ende,
                                 "Ablaufdatum":self.Ablaufdaten,"Saldo1":self.Saldo_1_Liste, "Saldo2":self.Saldo_2_Liste,
-                                "Einsaetze": self.Einsaetze,"Gewinne": self.Gewinne}
+                                "Einsaetze": self.Einsaetze,"Gewinne": self.Gewinne,
+                                "Einwurf" : self.Einwuerfe,"Auswurf" : self.Auswuerfe
+                                }
     
 
     def dataframe(self):
