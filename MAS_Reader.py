@@ -262,21 +262,8 @@ class Rechnung():
     def open(self): #Datei öffnen
         os.startfile(self.Pfad)
         
-    def pdf(self):
-        pdf = FPDF() #PDF-Klasse
-        pdf.add_page() 
-        pdf.set_font("Arial", size = 10) 
-        
-        lines = open(self.Pfad,"r",encoding='utf8', errors='ignore')
-        
-        for line in lines: 
-            pdf.cell(180, 4, txt = line, ln = 1, align = 'L')  # Width, height,
-        PDF_Pfad = os.path.join(create_Ordner(r"pdf/" +self.Ort),self.Dateiname.replace(self.FileExtension,".pdf"))
-        pdf.output(PDF_Pfad)  
-        lines.close()
-        return pdf
 
-    def PDFcut(self,Zeilen:int=100):
+    def pdf(self,Zeilen:int=100):
         """
         Erstellt PDF der ersten x Zeilen
 
@@ -289,17 +276,23 @@ class Rechnung():
         
         lines = open(self.Pfad,"r",encoding='utf8', errors='ignore')
         
+        ### Schneiden ###
         Strings = [L for L in lines]
-        Strings = Strings[0:Zeilen]
+        if Zeilen != 0:
+            Strings = Strings[0:Zeilen]
+        #------#
 
         for line in Strings: 
             pdf.cell(180, 4, txt = line, ln = 1, align = 'L')  # Width, height,
         PDF_Pfad = os.path.join(create_Ordner(r"pdf/" +self.Ort),self.Dateiname.replace(self.FileExtension,".pdf"))
-        pdf.output(PDF_Pfad)  
-        lines.close()
+        try:
+            pdf.output(PDF_Pfad)  
+            lines.close()
+        except UnicodeEncodeError:
+            print(self.Dateiname,": PDF konnte aufgrund von Sonderzeichen nicht erstellt werden")
 
 
-
+ 
 
 class Aufstellort():    
 
@@ -436,10 +429,11 @@ class Aufstellort():
             N_Zeilen (int, optional): Anzahl Zeilen, bis zu der abgeschnitten wird. Defaults to 100.
         """
         for Quittung in self.Rechnungen:
-            if cut == True:
-                Quittung.PDFcut(Zeilen=N_Zeilen)
-            elif cut != True:
-                Quittung.pdf()
+            if cut == False or N_Zeilen == 0:
+                Quittung.pdf(Zeilen=0)
+            else: 
+                Quittung.pdf(Zeilen=N_Zeilen)
+
     
     def Excel(self):
         """
@@ -493,8 +487,8 @@ if __name__ == "__main__":
     for Location in Locations:
 
         if PDF_Frage == "y":
-            Location.pdf(cut=True,N_Zeilen=100)
-
+            PDF_Zeilen = int(input("Anzahl Zeilen des PDF?: "))
+            Location.pdf(cut=True,N_Zeilen=PDF_Zeilen)
         if Remove_Frage == "y" or Remove_Frage == "c": 
          Location.Verschieben(remove=Remove_Frage)
         if Excel_Frage == "y":
