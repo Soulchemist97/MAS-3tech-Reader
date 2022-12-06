@@ -1,5 +1,5 @@
 
-![MAS Reader Logo](https://github.com/Soulchemist97/MAS3-Reader/blob/main/Logo/MAS_Reader_Logo.png?raw=true)
+<p align="center"><img src="https://github.com/Soulchemist97/MAS3-Reader/blob/main/Logo/MAS_Reader_Logo.png?raw=true" height="350px"></p>
 
 
 
