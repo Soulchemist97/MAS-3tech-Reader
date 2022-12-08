@@ -77,7 +77,8 @@ Regex_Patterns = {
 "Ausdruck":r"(A|B) \d{3}",
 "Geraetetyp":r"\x1bK\"",
 "Ablaufdatum":r"\d{4}/\d{2}",
-"Geld":r"(- |-| |-  |)(\d{6}|\d{5}|\d{4}|\d{3}|\d{2}|\d{1}),\d{2}"}
+"Geld":r"\d+(.\d{1,2})"
+}
 
 
 
@@ -249,8 +250,8 @@ class Rechnung():
         Saldo 2: {self.Saldo_2} € \r
         Einsaetze: {self.Einsaetze} € \r
         Gewinne: {self.Gewinne} € \r
-        Einwurf: {self.Einwurf} \r
-        Auswurf: {self.Auswurf} \r
+        Einwurf: {self.Einwurf} € \r
+        Auswurf: {self.Auswurf} € \r
         Geraetetyp: {self.Geraetetyp} \r
         """
 
