@@ -463,39 +463,52 @@ class Aufstellort():
 
 if __name__ == "__main__":
 
+    print("Datei aus Input Ordner werden geladen")
+
     ## Ordnerpfade zum befüllen mit Quittungen ##
     Input_dir = create_Ordner("Input")  #"Input"
     Output_dir = create_Ordner("Output") # Output
-
 
     # Aufstellorte Indizieren
     Orte = os.listdir(Input_dir)
     Locations=[Aufstellort(Ort) for Ort in Orte]
 
+    Bool_Dict = {
+        "y":True,
+        "Y":True,
+        "Yes":True,
+        "yes":True,
+        "Ja":True,
+        "ja":True,
+        "N":False,
+        "n":False,
+        "Nein":False,
+        "nein":False}
+
+    Bool_Dict.setdefault("n")
+
+
     # Eingabeaufforderungen
     Print_Frage = input("Dateiinfos im Terminal ausgeben? (y): ")
 
-    if Print_Frage == "y":
+    if Bool_Dict.get(Print_Frage):
         for Loc in Locations:
             print(Loc)
 
     Remove_Frage = input("Verschieben (y), Kopieren (c), Nichts (n) : ")
-    Excel_Frage = input("Save Excel Files? y:  ")
-    PDF_Frage = input("Save as PDF? (y) :  ")
-    Store_Frage = input("Save Database? (y) :  ")
+    Excel_Frage = Bool_Dict.get(input("Save Excel Files? y:  "))
+    PDF_Frage = Bool_Dict.get(input("Save as PDF? (y) :  "))
 
+    if PDF_Frage:
+        PDF_Zeilen = int(input("Anzahl Zeilen der PDFs? (0 = Alle): "))
 
     for Location in Locations:
-
-        if PDF_Frage == "y":
-            PDF_Zeilen = int(input("Anzahl Zeilen des PDF?: "))
+        if PDF_Frage:
             Location.pdf(cut=True,N_Zeilen=PDF_Zeilen)
         if Remove_Frage == "y" or Remove_Frage == "c": 
          Location.Verschieben(remove=Remove_Frage)
-        if Excel_Frage == "y":
+        if Excel_Frage :
             Location.Excel()
-        if Store_Frage == "y":
-            Location.store()
 
     ### Delete Empty Folders ###
     DeleteEmptyFolder(Input_dir)
