@@ -6,8 +6,6 @@
 import os  # Anwählen von Ordnern
 import io  # Arbeiten mit Filestreams
 import pandas as pd  # Tabellen-Modul
-
-from datetime import datetime as dt  # Formatiert Datumswerte
 import re  # RegEx Sucht Patterns in Strings
 from string import whitespace  # Leerzeichen entfernen
 
@@ -16,7 +14,7 @@ import shutil  # Kopieren, Verschieben in andere Ordner
 try:
     from fpdf import FPDF  # PDF Creator
     # PDF-Dokumentation https://pyfpdf.readthedocs.io/en/latest/Tutorial/index.html
-except:
+except ModuleNotFoundError:
     print("Fehlendes PDF-Modul: FPDF")
 
 
@@ -32,7 +30,7 @@ def create_Ordner(Ordner: str):
     Verzeichnis = Ordner  # Verzeichnisse zusammensetzen ohne + "/"
     Vorhanden = os.path.isdir(Verzeichnis)  # Prüfen ob Vorhanden
 
-    if Vorhanden != True:
+    if Vorhanden is False:
         os.makedirs(Verzeichnis)  # Erstelle Verzeichnis
     else:
         pass
@@ -86,9 +84,9 @@ def Extract_Value(Wort: str, Regex_Pattern: str, Lines):
     """
     for i in Lines:
         a = re.search(Wort, i)  # Suche Wort in Zeile
-        if a != None:  # Wenn Wort gefunden
+        if a is not None:  # Wenn Wort gefunden
             Z = re.search(Regex_Pattern, i)
-            if Z != None:
+            if Z is not None:
                 return Z[0]
 
 
@@ -107,9 +105,9 @@ def Extract_OtherValue(Wort: str, Lines, Versatz: int = 1, Remove_Spaces: bool =
     index = 0  # Zeilenindex
     for i in Lines:
         a = re.search(Wort, i)  # Suche Zeile mit Wort
-        if a != None:  # Wenn Wort gefunden
+        if a is not None:  # Wenn Wort gefunden
             Z = re.sub(' +', ' ', Lines[index + Versatz])  # Zeile Versetzt um die gefundene ohne Multi-spaces
-            if Z != None:
+            if Z is not None:
                 return Z
         index += 1
 
@@ -136,11 +134,11 @@ class Rechnung():
         """
         self.Ort = Aufstellort
 
-        if type(Pfad) != io.TextIOWrapper:  # File-like Object
+        if type(Pfad) is not io.TextIOWrapper:  # File-like Object
             self.Pfad = Pfad
             Input_File = Pfad
             FileStreamCheck = False
-        elif type(Pfad) == io.TextIOWrapper:
+        elif type(Pfad) is io.TextIOWrapper:
             self.Pfad = Pfad.name
             Input_File = Pfad
             FileStreamCheck = True
@@ -156,7 +154,7 @@ class Rechnung():
         Liest aus verschiedenen Dokumentstrukturen die Daten je Quittung aus mittels Regex Patterns.
         """
 
-        if FileStream_Check == False:
+        if FileStream_Check is False:
             ### Datei öffnen und Liste aus Zeilen ausgeben
             File_Obj = open(fileInput, "r", encoding='utf8', errors='ignore')  # Öffnen der Datei
         else:
@@ -170,7 +168,7 @@ class Rechnung():
         self.Zulassung = Extract_Value(Wort="ZULASSUNG", Regex_Pattern=Regex_Patterns["Zulassungsnummer"],
                                        Lines=File_Lines, )
         self.Ausdruck_Nr = Extract_Value(Wort="AUSDRUCK", Regex_Pattern=Regex_Patterns["Ausdruck"], Lines=File_Lines, )
-        if self.Ausdruck_Nr == None:
+        if self.Ausdruck_Nr is None:
             self.Ausdruck_Nr = Extract_Value(Wort="KOPIE", Regex_Pattern=Regex_Patterns["Ausdruck"], Lines=File_Lines, )
         self.Ablaufdatum = Extract_Value(Wort="ABLAUF", Regex_Pattern=Regex_Patterns["Ablaufdatum"], Lines=File_Lines, )
 
@@ -188,7 +186,7 @@ class Rechnung():
                 Money_Value (float): Formatted money value
             """
             Money = Extract_Value(Wort, Regex_Pattern, Lines, )
-            if Money != None:
+            if Money is not None:
                 Money_wo_spaces = Money.translate({ord(c): None for c in whitespace})  # Spaces entfernen
                 Money: float = float(Money_wo_spaces.replace(",", "."))  # Leerzeichen entfernen
 
@@ -196,8 +194,8 @@ class Rechnung():
 
         # Regex SALDO (1) && SALDO (2) checken
 
-        self.Saldo_1 = MoneyFloat(Wort=" \(1", Regex_Pattern=Regex_Patterns["Geld"], Lines=File_Lines, )
-        self.Saldo_2 = MoneyFloat(Wort=" \(2", Regex_Pattern=Regex_Patterns["Geld"], Lines=File_Lines, )
+        self.Saldo_1 = MoneyFloat(Wort=r" \(1", Regex_Pattern=Regex_Patterns["Geld"], Lines=File_Lines, )
+        self.Saldo_2 = MoneyFloat(Wort=r" \(2", Regex_Pattern=Regex_Patterns["Geld"], Lines=File_Lines, )
         self.Einsaetze = MoneyFloat(Wort="EINSAETZE", Regex_Pattern=Regex_Patterns["Geld"], Lines=File_Lines, )
         self.Gewinne = MoneyFloat(Wort="GEWINNE", Regex_Pattern=Regex_Patterns["Geld"], Lines=File_Lines)
         self.Einwurf = MoneyFloat(Wort="EINWURF", Regex_Pattern=Regex_Patterns["Geld"], Lines=File_Lines)
@@ -212,13 +210,14 @@ class Rechnung():
             EndDatum_string = re.search(Regex_Patterns["Datum"], EndDatum_string)
 
             AnfangsDatum_String = Extract_OtherValue(Wort="LETZTE KASSIERUNG", Lines=File_Lines, Versatz=2)
-            if AnfangsDatum_String == None:
+            if AnfangsDatum_String is None:
                 AnfangsDatum_String = Extract_OtherValue(Wort="INBETRIEBNAHME", Lines=File_Lines, Versatz=2)
 
             AnfangsDatum_String = re.search(Regex_Patterns["Datum"], AnfangsDatum_String)
 
             self.Datum_Anfang, self.Datum_Ende = AnfangsDatum_String[0], EndDatum_string[0]
-        except:
+        except Exception as e:
+            print(e)
             print(fileInput, "Datum konnte nicht ausgelesen werden")
 
         ### Datum ausgelesen ###
@@ -228,7 +227,7 @@ class Rechnung():
         Dateiname = f"{self.Ort} [{self.Datum_Anfang}-{self.Datum_Ende}]({str(self.Ausdruck_Nr)})({str(self.Zulassung)}){self.FileExtension}"
         self.Dateiname = Dateiname
 
-        if FileStream_Check == False:
+        if FileStream_Check is False:
             File_Obj.close()  # Schließen der Datei
 
         return Dateiname
@@ -338,14 +337,14 @@ class Aufstellort():
             ValueError: Fehler, wenn keine der beiden Werte gesetzt wurde.
         """
 
-        if Ort == None and Pfad == None:
+        if Ort is None and Pfad is None:
             OrtError = "Ort in Input oder Ordnerpfad benötigt"
             raise ValueError(OrtError)
 
-        if Pfad == None:
+        if Pfad is None:
             self.Ort = Ort
             self.Input = os.path.join(Input_dir, self.Ort)
-        elif Pfad != None:
+        elif Pfad is not  None:
             self.Input = Pfad
             self.Ort = Pfad.split("\\")[-1]
 
@@ -422,7 +421,7 @@ class Aufstellort():
             N_Zeilen (int, optional): Anzahl Zeilen, bis zu der abgeschnitten wird. Defaults to 100.
         """
         for Quittung in self.Rechnungen:
-            if cut == False or N_Zeilen == 0:
+            if cut is False or N_Zeilen == 0:
                 Quittung.pdf(Zeilen=0)
             else:
                 Quittung.pdf(Zeilen=N_Zeilen)
