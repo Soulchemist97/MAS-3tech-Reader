@@ -357,7 +357,7 @@ class Aufstellort():
 
         self.Output = os.path.join(Output_dir, self.Ort)  # Ausgabe-Ordner
         self.Dateien = os.listdir(self.Input)  # Liste aller Dateien
-        Pfade = [os.path.join(self.Input, Rechnung) for Rechnung in self.Dateien]
+        Pfade = [os.path.join(self.Input, file) for file in self.Dateien]
 
         ## Liste aller Klassen-Objekte ##
         self.Rechnungen = [Rechnung(self.Ort, Quittung) for Quittung in Pfade]
@@ -460,7 +460,12 @@ if __name__ == "__main__":
     Output_dir = create_Ordner("Output")  # Output
 
     # Aufstellorte Indizieren
-    Orte = os.listdir(Input_dir)
+    Orte = [
+        Location_folder
+        for Location_folder in os.listdir(Input_dir)
+        if os.path.isdir(os.path.join(Input_dir, Location_folder))
+    ]
+
     Locations = [Aufstellort(Ort) for Ort in Orte]
 
     Bool_Dict = {
@@ -498,6 +503,11 @@ if __name__ == "__main__":
         # S eine Zeile nach Saldo (2)
 
     for Location in Locations:
+        if Remove_Frage == "y" or Remove_Frage == "c":
+            Location.Verschieben(remove=Remove_Frage)
+        if Excel_Frage:
+            Location.Excel()
+        
         if PDF_Frage:
             if type(PDF_Zeilen) is int:
                 Location.pdf(cut=True, N_Zeilen=PDF_Zeilen)
@@ -511,10 +521,6 @@ if __name__ == "__main__":
                     if PDF_Zeilen == "S" or PDF_Zeilen == "s":
                         Quittung.pdf(Zeilen=Saldo_lines)
 
-            if Remove_Frage == "y" or Remove_Frage == "c":
-                Location.Verschieben(remove=Remove_Frage)
-            if Excel_Frage:
-                Location.Excel()
 
     ### Delete Empty Folders ###
     DeleteEmptyFolder(Input_dir)
