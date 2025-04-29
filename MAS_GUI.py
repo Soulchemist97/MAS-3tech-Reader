@@ -9,6 +9,7 @@ app = QtWidgets.QApplication(sys.argv)
 
 window = QtWidgets.QMainWindow()
 window.setWindowTitle("MAS Reader")
+window.setWindowIcon(QIcon("Logo\MAS_Reader_Logo.png"))
 
 ui_window = Ui_MainWindow()
 ui_window.setupUi(window)
