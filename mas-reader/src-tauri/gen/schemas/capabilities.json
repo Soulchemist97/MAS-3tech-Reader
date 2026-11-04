@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Rechte des Hauptfensters","local":true,"windows":["main"],"permissions":["core:default","core:window:allow-start-dragging","core:window:allow-toggle-maximize","dialog:allow-open","dialog:allow-save"]}}

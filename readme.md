@@ -64,3 +64,21 @@ Klassenobjekt mit allen Rechnungsobjekten in Input/Aufstellort oder Alternative 
 ```
 Ort1 = Aufstellort("Aufstellortname",Pfad=Ordnerpfad)
 ```
+
+
+## Rust-Version mit Oberfläche (`mas-reader/`)
+
+Neuschreibung in Rust mit Tauri-GUI (macOS-Look, Hell/Dunkel). Die Python-Dateien oben bleiben als Referenz.
+
+```
+cd mas-reader
+cargo tauri dev          # GUI starten (einmalig: cargo install tauri-cli --version "^2.0.0" --locked)
+cargo run                # Terminal-Version (CLI)
+cargo test --workspace   # Tests
+```
+
+Die GUI: Ordner wählen, Tabelle wie in Excel, Schnellansicht des Bons rechts (Leertaste = groß),
+PDF-Export mit Auswahl, wie viel ins PDF kommt, Excel-Export, Umbenennen (Kopieren/Verschieben)
+und Einstellungen für die Dateinamen-Vorlage mit Platzhaltern wie `{ort}`, `{anfang}`, `{zulassung}`.
+
+Zum Ausprobieren ohne Ordnerdialog: `MAS_OPEN_FOLDER=/Pfad/zum/Ordner cargo tauri dev`.

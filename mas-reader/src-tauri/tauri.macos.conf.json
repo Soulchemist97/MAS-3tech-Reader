@@ -1,0 +1,15 @@
+{
+  "app": {
+    "windows": [
+      {
+        "title": "MAS Reader",
+        "width": 1280,
+        "height": 780,
+        "minWidth": 900,
+        "minHeight": 560,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
+      }
+    ]
+  }
+}

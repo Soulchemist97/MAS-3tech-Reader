@@ -6,7 +6,8 @@ use rust_xlsxwriter::{ExcelDateTime, Format, Workbook, Worksheet, XlsxError};
 use crate::money::Money;
 use crate::receipt::Receipt;
 
-const HEADERS: [&str; 12] = [
+/// Spaltenüberschriften der Excel-Tabelle. Die GUI zeigt dieselben Spalten in derselben Reihenfolge.
+pub const HEADERS: [&str; 12] = [
     "Zulassung",
     "Ausdruck",
     "Ablauf",
@@ -21,8 +22,9 @@ const HEADERS: [&str; 12] = [
     "Auswurf",
 ];
 
-/// Schreibt alle Quittungen in eine Excel-Datei: eine Zeile pro Quittung.
-pub fn write_excel(receipts: &[Receipt], path: &Path) -> Result<(), XlsxError> {
+/// Schreibt Quittungen in eine Excel-Datei: eine Zeile pro Quittung.
+/// Akzeptiert alles, was `&Receipt` liefert (`&[Receipt]`, `Vec<&Receipt>`, Iteratoren).
+pub fn write_excel<'a>(receipts: impl IntoIterator<Item = &'a Receipt>, path: &Path) -> Result<(), XlsxError> {
     let mut workbook = Workbook::new();
     let sheet = workbook.add_worksheet();
 
@@ -34,7 +36,7 @@ pub fn write_excel(receipts: &[Receipt], path: &Path) -> Result<(), XlsxError> {
         sheet.write_string_with_format(0, col as u16, *title, &bold)?;
     }
 
-    for (i, r) in receipts.iter().enumerate() {
+    for (i, r) in receipts.into_iter().enumerate() {
         let row = i as u32 + 1; // Zeile 0 sind die Überschriften
 
         write_text(sheet, row, 0, &r.license_no)?;

@@ -143,3 +143,6 @@ dmypy.json
 # Added by cargo
 
 /target
+
+# Tauri
+src-tauri/gen/
