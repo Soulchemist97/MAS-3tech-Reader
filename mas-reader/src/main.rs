@@ -6,6 +6,7 @@ mod pdf;
 mod receipt;
 
 use dialoguer::{Input, Select};
+use organize::Mode;
 use pdf::PdfRange;
 use receipt::Receipt;
 
@@ -25,12 +26,13 @@ fn read_content(path: &std::path::Path) -> std::io::Result<String> {
 fn ask_pdf_range() -> dialoguer::Result<Option<PdfRange>> {
     let choice = Select::new()
         .with_prompt("PDFs erzeugen?")
-        .items(&[
+        .items([
             "Nein, keine PDFs",
             "Ganze Datei",
             "Bis Einsätze (EINSAETZE + 1 Zeile)",
             "Bis Saldo 2 (SALDO (2) + 1 Zeile)",
             "Erste N Zeilen",
+            "Bis zu einem eigenen Stichwort",
         ])
         .default(0)
         .interact()?;
@@ -43,8 +45,26 @@ fn ask_pdf_range() -> dialoguer::Result<Option<PdfRange>> {
             let n: usize = Input::new().with_prompt("Anzahl Zeilen").interact_text()?;
             Some(PdfRange::Lines(n))
         }
+        5 => {
+            let word: String = Input::new()
+                .with_prompt("Stichwort (Groß-/Kleinschreibung und Leerzeichen egal)")
+                .interact_text()?;
+            Some(PdfRange::UntilKeyword(word))
+        }
         _ => None,
     })
+}
+
+/// Fragt, ob die umbenannten Dateien kopiert oder verschoben werden.
+/// Standard ist Kopieren, weil das nichts zerstört.
+fn ask_mode() -> dialoguer::Result<Mode> {
+    let choice = Select::new()
+        .with_prompt("Dateien umbenennen")
+        .items(["Kopieren (Original bleibt)", "Verschieben (Original wird entfernt)"])
+        .default(0)
+        .interact()?;
+
+    Ok(if choice == 1 { Mode::Move } else { Mode::Copy })
 }
 
 fn main() {
@@ -66,16 +86,20 @@ fn main() {
                 .unwrap_or_default();
             let out_dir = path.join("Output").join(&location);
 
-            // PDF-Option einmal vor der Schleife abfragen
+            // Optionen einmal vor der Schleife abfragen
+            let mode = ask_mode().unwrap_or_else(|e| {
+                eprintln!("Abfrage fehlgeschlagen, es wird kopiert: {e}");
+                Mode::Copy
+            });
             let pdf_range = ask_pdf_range().unwrap_or_else(|e| {
                 eprintln!("Abfrage fehlgeschlagen, es werden keine PDFs erzeugt: {e}");
                 None
             });
             let pdf_dir = path.join("pdf").join(&location);
-            if pdf_range.is_some() {
-                if let Err(e) = fs::create_dir_all(&pdf_dir) {
-                    eprintln!("PDF-Ordner konnte nicht angelegt werden: {e}");
-                }
+            if pdf_range.is_some()
+                && let Err(e) = fs::create_dir_all(&pdf_dir)
+            {
+                eprintln!("PDF-Ordner konnte nicht angelegt werden: {e}");
             }
             // Alle Dateien im Ordner durchgehen und Inhalt ausgeben
             for entry in fs::read_dir(&path).unwrap() {
@@ -103,20 +127,25 @@ fn main() {
                 println!("{receipt:#?}");
                 println!("Gerätetyp: {}", receipt.device_type.as_deref().unwrap_or("unbekannt"));
 
-                // Umbenennen: Original bleibt (Mode::Copy). Zum Verschieben Mode::Move nehmen.
+                // Umbenennen: kopieren oder verschieben, je nach Auswahl oben
                 let extension = file_path.extension().and_then(|e| e.to_str()).unwrap_or("");
                 let new_name = organize::new_filename(&location, &receipt, extension);
-                match organize::organize(&file_path, &out_dir, &new_name, organize::Mode::Copy) {
+                match organize::organize(&file_path, &out_dir, &new_name, mode) {
                     Ok(target) => println!("-> {}", target.display()),
                     Err(e) => eprintln!("{}: {e}", file_path.display()),
                 }
 
                 // PDF mit der gewählten Auswahl (None = keine PDFs)
-                if let Some(range) = pdf_range {
+                if let Some(range) = &pdf_range {
                     let pdf_name = std::path::Path::new(&new_name).with_extension("pdf");
                     let pdf_path = pdf_dir.join(pdf_name);
                     match pdf::write_pdf(&content, range, &pdf_path) {
-                        Ok(()) => println!("-> {}", pdf_path.display()),
+                        Ok(warning) => {
+                            println!("-> {}", pdf_path.display());
+                            if let Some(w) = warning {
+                                eprintln!("   Hinweis: {w}");
+                            }
+                        }
                         Err(e) => eprintln!("{}: PDF fehlgeschlagen: {e}", file_path.display()),
                     }
                 }

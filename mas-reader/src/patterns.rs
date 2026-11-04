@@ -54,8 +54,6 @@ pub const KW_EXPIRY: &str = "ABLAUF";
 
 pub const KW_SALDO_1: &str = " (1"; // Python: r" \(1"
 pub const KW_SALDO_2: &str = " (2"; // Python: r" \(2"
-/// Genauer als `KW_SALDO_2`: Python nutzte für das PDF-Ende "SALDO (2)" (S-Option)
-pub const KW_SALDO_2_LINE: &str = "SALDO (2)";
 pub const KW_STAKES: &str = "EINSAETZE";
 pub const KW_WINNINGS: &str = "GEWINNE";
 pub const KW_INSERTED: &str = "EINWURF";
@@ -74,6 +72,18 @@ pub const DATE_LINE_OFFSET: usize = 2;
 /// Python: `Regex_Patterns["Geraetetyp"]` = `\x1bK"`
 pub const MARKER_DEVICE_TYPE: &str = "\x1bK\"";
 pub const DEVICE_TYPE_LINE_OFFSET: usize = 1;
+
+// ---------------------------------------------------------------------------
+// PDF-Ende (Python: Optionen E und S). Kandidaten in Prioritätsreihenfolge, der
+// erste, der in der Datei vorkommt, gewinnt. Die Suche ignoriert Groß-/Klein-
+// schreibung und Leerzeichen, "SALDO (2)" findet also auch "Saldo(2)".
+// Für neue Quittungsformate hier einfach weitere Schreibweisen ergänzen.
+// ---------------------------------------------------------------------------
+
+/// PDF bis "Einsätze"
+pub const PDF_END_STAKES: &[&str] = &["EINSAETZE", "EINSATZ"];
+/// PDF bis "Saldo 2"
+pub const PDF_END_SALDO_2: &[&str] = &["SALDO (2)", "SALDO 2"];
 
 /// Python: `re.sub(' +', ' ', zeile)` – mehrere Leerzeichen zu einem.
 pub static MULTI_SPACE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r" +").unwrap());
