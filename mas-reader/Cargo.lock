@@ -2274,7 +2274,7 @@ dependencies = [
 
 [[package]]
 name = "mas-reader"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2288,7 +2288,7 @@ dependencies = [
 
 [[package]]
 name = "mas-reader-gui"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "mas-reader",

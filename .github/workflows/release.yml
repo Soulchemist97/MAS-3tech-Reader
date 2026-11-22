@@ -1,6 +1,6 @@
 name: Release
 
-# Bei einem Tag wie v0.1.0 werden Installer für macOS (Apple Silicon), Windows und Linux gebaut
+# Bei einem Tag wie v1.0.0 werden Installer für macOS (Apple Silicon), Windows und Linux gebaut
 # und an ein GitHub-Release (zunächst als Entwurf) gehängt.
 on:
   push:
