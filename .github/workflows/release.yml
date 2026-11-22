@@ -1,6 +1,6 @@
 name: Release
 
-# Bei einem Tag wie v0.1.0 werden Installer für macOS, Windows und Linux gebaut
+# Bei einem Tag wie v0.1.0 werden Installer für macOS (Apple Silicon), Windows und Linux gebaut
 # und an ein GitHub-Release (zunächst als Entwurf) gehängt.
 on:
   push:
@@ -19,9 +19,6 @@ jobs:
           - os: macos-latest        # Apple Silicon
             args: --target aarch64-apple-darwin
             target: aarch64-apple-darwin
-          - os: macos-13            # Intel
-            args: --target x86_64-apple-darwin
-            target: x86_64-apple-darwin
           - os: ubuntu-22.04
             args: ""
             target: ""
