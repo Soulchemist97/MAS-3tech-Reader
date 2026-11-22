@@ -30,11 +30,13 @@ pub fn read_content(path: &Path) -> io::Result<String> {
     Ok(String::from_utf8_lossy(&bytes).into_owned())
 }
 
-fn is_ack(path: &Path) -> bool {
-    path.is_file() && path.extension().is_some_and(|ext| ext.eq_ignore_ascii_case("ACK"))
+/// Quittungen sind `.ACK`-Dateien; manche Quellen liefern dieselbe Struktur als `.txt`.
+fn is_receipt(path: &Path) -> bool {
+    path.is_file()
+        && path.extension().is_some_and(|ext| ext.eq_ignore_ascii_case("ACK") || ext.eq_ignore_ascii_case("txt"))
 }
 
-/// Liest alle `.ACK`-Dateien direkt in `dir` (keine Unterordner), sortiert nach Dateiname.
+/// Liest alle `.ACK`- und `.txt`-Dateien direkt in `dir` (keine Unterordner), sortiert nach Dateiname.
 /// Fehler gibt es nur, wenn der Ordner selbst nicht gelesen werden kann.
 pub fn scan_folder(dir: &Path) -> io::Result<ScanResult> {
     let mut paths = Vec::new();
@@ -42,7 +44,7 @@ pub fn scan_folder(dir: &Path) -> io::Result<ScanResult> {
 
     for entry in fs::read_dir(dir)? {
         match entry {
-            Ok(e) if is_ack(&e.path()) => paths.push(e.path()),
+            Ok(e) if is_receipt(&e.path()) => paths.push(e.path()),
             Ok(_) => {} // Unterordner und fremde Dateien überspringen
             Err(e) => errors.push(format!("Eintrag nicht lesbar: {e}")),
         }
@@ -69,19 +71,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn nur_ack_dateien_sortiert_ohne_unterordner() {
+    fn nur_ack_und_txt_dateien_sortiert_ohne_unterordner() {
         let dir = std::env::temp_dir().join(format!("mas_scan_test_{}", std::process::id()));
         let ort = dir.join("Bar");
         fs::create_dir_all(ort.join("unterordner.ACK")).unwrap(); // Ordner mit .ACK im Namen
         fs::write(ort.join("b.ACK"), "ZULASSUNGS NR.:111222333").unwrap();
         fs::write(ort.join("a.ack"), "ZULASSUNGS NR.:444555666").unwrap(); // Endung klein
-        fs::write(ort.join("notiz.txt"), "egal").unwrap();
+        fs::write(ort.join("c.TXT"), "ZULASSUNGS NR.:777888999").unwrap();
+        fs::write(ort.join("notiz.md"), "egal").unwrap();
 
         let result = scan_folder(&ort).unwrap();
         assert_eq!(result.location, "Bar");
         assert!(result.errors.is_empty());
         let names: Vec<_> = result.files.iter().map(|f| f.path.file_name().unwrap().to_str().unwrap()).collect();
-        assert_eq!(names, ["a.ack", "b.ACK"]);
+        assert_eq!(names, ["a.ack", "b.ACK", "c.TXT"]);
         assert_eq!(result.files[0].receipt.license_no.as_deref(), Some("444555666"));
 
         fs::remove_dir_all(&dir).ok();

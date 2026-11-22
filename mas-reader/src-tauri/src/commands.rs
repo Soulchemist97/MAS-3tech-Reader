@@ -26,6 +26,9 @@ pub fn context<R: tauri::Runtime>() -> tauri::Context<R> {
 pub fn handler<R: tauri::Runtime>() -> impl Fn(tauri::ipc::Invoke<R>) -> bool + Send + Sync + 'static {
     tauri::generate_handler![
         scan_folder,
+        set_location,
+        output_dir,
+        open_folder,
         initial_folder,
         receipt_text,
         template_info,
@@ -161,6 +164,54 @@ pub async fn scan_folder(path: String, state: State<'_, AppState>) -> Result<Sca
     .await
 }
 
+/// Überschreibt den Aufstellort (Standard: Ordnername), z. B. wenn die Dateien in Unterordnern liegen.
+/// Gilt für Dateinamen, PDFs und Zielordner. Leer = zurück zum Ordnernamen.
+#[tauri::command]
+pub async fn set_location(location: String, state: State<'_, AppState>) -> Result<String, String> {
+    with_loaded(&state, move |loaded| {
+        let typed = location.trim();
+        loaded.location = if typed.is_empty() {
+            loaded.dir.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()
+        } else {
+            typed.to_string()
+        };
+        Ok(loaded.location.clone())
+    })
+    .await
+}
+
+/// Zielordner, in den Umbenennen standardmäßig schreibt (für die Anzeige im Dialog).
+#[tauri::command]
+pub async fn output_dir(state: State<'_, AppState>) -> Result<String, String> {
+    with_loaded(&state, |loaded| {
+        Ok(organize::default_output_dir(&loaded.dir, &loaded.location).display().to_string())
+    })
+    .await
+}
+
+/// Öffnet den geladenen Ordner im Finder bzw. Explorer.
+#[tauri::command]
+pub async fn open_folder(state: State<'_, AppState>) -> Result<(), String> {
+    with_loaded(&state, |loaded| {
+        if loaded.dir.as_os_str().is_empty() {
+            return Err("Es ist noch kein Ordner geladen".into());
+        }
+        let opener = if cfg!(target_os = "macos") {
+            "open"
+        } else if cfg!(target_os = "windows") {
+            "explorer"
+        } else {
+            "xdg-open"
+        };
+        std::process::Command::new(opener)
+            .arg(&loaded.dir)
+            .spawn()
+            .map(drop)
+            .map_err(|e| format!("Ordner konnte nicht geöffnet werden: {e}"))
+    })
+    .await
+}
+
 /// Nur für Entwicklung: `MAS_OPEN_FOLDER=<Pfad> cargo tauri dev` lädt den Ordner beim Start.
 #[tauri::command]
 pub fn initial_folder() -> Option<String> {
@@ -263,7 +314,15 @@ pub enum RangeDto {
     Lines { value: usize },
     Stakes,
     Saldo2,
-    Keyword { value: String },
+    Keyword {
+        value: String,
+        /// Wievielte Nennung (Standard: erste)
+        #[serde(default)]
+        occurrence: Option<usize>,
+        /// Zeilen nach (+) oder vor (-) der Stichwortzeile (Standard: 0)
+        #[serde(default)]
+        offset: Option<i32>,
+    },
 }
 
 impl RangeDto {
@@ -274,10 +333,15 @@ impl RangeDto {
             RangeDto::Lines { value } => PdfRange::Lines(value),
             RangeDto::Stakes => PdfRange::UntilStakes,
             RangeDto::Saldo2 => PdfRange::UntilSaldo2,
-            RangeDto::Keyword { value } if value.trim().is_empty() => {
+            RangeDto::Keyword { value, .. } if value.trim().is_empty() => {
                 return Err("Bitte ein Stichwort eingeben".into());
             }
-            RangeDto::Keyword { value } => PdfRange::UntilKeyword(value),
+            RangeDto::Keyword { occurrence: Some(0), .. } => {
+                return Err("Die Nennung muss mindestens 1 sein".into());
+            }
+            RangeDto::Keyword { value, occurrence, offset } => {
+                PdfRange::UntilKeyword { word: value, occurrence: occurrence.unwrap_or(1), offset: offset.unwrap_or(0) }
+            }
         })
     }
 }
@@ -375,7 +439,7 @@ pub async fn organize_files(
         };
         select(&loaded.files, &indices)?;
 
-        let dir = out_dir.map(PathBuf::from).unwrap_or_else(|| loaded.dir.join("Output").join(&loaded.location));
+        let dir = out_dir.map(PathBuf::from).unwrap_or_else(|| organize::default_output_dir(&loaded.dir, &loaded.location));
         let mut report = Report { out_dir: dir.display().to_string(), ..Default::default() };
 
         for i in wanted {
@@ -433,9 +497,12 @@ mod tests {
     #[test]
     fn zeilenbereich_wird_geprueft() {
         assert!(RangeDto::Lines { value: 0 }.into_range().is_err());
-        assert!(RangeDto::Keyword { value: "  ".into() }.into_range().is_err());
+        assert!(RangeDto::Keyword { value: "  ".into(), occurrence: None, offset: None }.into_range().is_err());
         assert_eq!(RangeDto::Lines { value: 5 }.into_range().unwrap(), PdfRange::Lines(5));
         assert_eq!(RangeDto::Saldo2.into_range().unwrap(), PdfRange::UntilSaldo2);
+        let r: RangeDto = serde_json::from_str(r#"{"kind":"keyword","value":"SALDO","occurrence":2,"offset":-1}"#).unwrap();
+        assert_eq!(r.into_range().unwrap(), PdfRange::UntilKeyword { word: "SALDO".into(), occurrence: 2, offset: -1 });
+        assert!(RangeDto::Keyword { value: "x".into(), occurrence: Some(0), offset: None }.into_range().is_err());
     }
 
     #[test]

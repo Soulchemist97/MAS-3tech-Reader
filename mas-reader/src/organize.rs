@@ -137,6 +137,18 @@ pub fn organize(source: &Path, out_dir: &Path, new_name: &str, mode: Mode) -> io
     Ok(target)
 }
 
+/// Standard-Zielordner zum Umbenennen: `<Ordner>/Output/<Ort>`. Liegt der geladene Ordner
+/// schon in einem Ordner `Output` (oder ist selbst einer), wird dieser weiterverwendet,
+/// sonst entstünde `Output/Ort/Output/Ort`.
+pub fn default_output_dir(dir: &Path, location: &str) -> PathBuf {
+    let is_output = |p: &Path| p.file_name().is_some_and(|n| n.eq_ignore_ascii_case("output"));
+    match dir.ancestors().find(|p| is_output(p)) {
+        Some(base) if is_output(dir) && location.eq_ignore_ascii_case("output") => base.to_path_buf(),
+        Some(base) => base.join(location),
+        None => dir.join("Output").join(location),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -190,6 +202,16 @@ mod tests {
         let r = Receipt { saldo_1: Some(crate::money::Money(113300)), ..Default::default() };
         assert_eq!(render_template("S1 {saldo1}, S2 {saldo2}", "Bar", &r).unwrap(), "S1 1133,00, S2 --");
         assert_eq!(new_filename_with("{ort}", "Bar", &r, "").unwrap(), "Bar");
+    }
+
+    #[test]
+    fn output_ordner_wird_nicht_verschachtelt() {
+        let p = Path::new;
+        assert_eq!(default_output_dir(p("/a/Bar"), "Bar"), p("/a/Bar/Output/Bar"));
+        assert_eq!(default_output_dir(p("/a/Output/Bar"), "Bar"), p("/a/Output/Bar"));
+        assert_eq!(default_output_dir(p("/a/Output/Bar"), "Neu"), p("/a/Output/Neu"));
+        assert_eq!(default_output_dir(p("/a/Output/Bar/Keller"), "Bar"), p("/a/Output/Bar"));
+        assert_eq!(default_output_dir(p("/a/Output"), "Output"), p("/a/Output"));
     }
 
     #[test]

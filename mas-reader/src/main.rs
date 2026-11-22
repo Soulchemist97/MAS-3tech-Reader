@@ -33,7 +33,15 @@ fn ask_pdf_range() -> dialoguer::Result<Option<PdfRange>> {
             let word: String = Input::new()
                 .with_prompt("Stichwort (Groß-/Kleinschreibung und Leerzeichen egal)")
                 .interact_text()?;
-            Some(PdfRange::UntilKeyword(word))
+            let occurrence: usize = Input::new()
+                .with_prompt("Wievielte Nennung des Stichworts (1 = erste)")
+                .default(1)
+                .interact_text()?;
+            let offset: i32 = Input::new()
+                .with_prompt("Zeilen nach (+) oder vor (-) der Stichwortzeile")
+                .default(0)
+                .interact_text()?;
+            Some(PdfRange::UntilKeyword { word, occurrence, offset })
         }
         _ => None,
     })
@@ -72,7 +80,7 @@ fn main() {
 
     // Aufstellort = Name des gewählten Ordners
     let location = &scanned.location;
-    let out_dir = path.join("Output").join(location);
+    let out_dir = organize::default_output_dir(&path, location);
 
     // Optionen einmal vor der Schleife abfragen
     let mode = ask_mode().unwrap_or_else(|e| {

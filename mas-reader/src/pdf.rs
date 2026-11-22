@@ -18,8 +18,10 @@ pub enum PdfRange {
     UntilStakes,
     /// Bis eine Zeile nach "SALDO (2)" (Python: S), Kandidaten: `patterns::PDF_END_SALDO_2`
     UntilSaldo2,
-    /// Bis eine Zeile nach einem frei gewählten Stichwort
-    UntilKeyword(String),
+    /// Bis zu einem frei gewählten Stichwort. `occurrence` ist die wievielte Zeile mit dem
+    /// Stichwort gemeint ist (1 = erste, 0 zählt auch als erste); `offset` verschiebt das
+    /// Ende um so viele sichtbare Zeilen (+ danach, - davor, 0 = Stichwortzeile ist die letzte).
+    UntilKeyword { word: String, occurrence: usize, offset: i32 },
 }
 
 /// Ergebnis der Zeilenauswahl. `warning` ist gesetzt, wenn das Ende nicht
@@ -59,15 +61,47 @@ fn page_width_mm(lines: &[String]) -> f32 {
 pub fn select_lines(content: &str, range: &PdfRange) -> Selection {
     let lines: Vec<&str> = content.lines().collect();
 
+    if let PdfRange::UntilKeyword { word, occurrence, offset } = range {
+        return keyword_selection(&lines, word, *occurrence, *offset);
+    }
+
     let (end, warning) = match range {
         PdfRange::All | PdfRange::Lines(0) => (lines.len(), None), // 0 = alle, wie in Python
         PdfRange::Lines(n) => ((*n).min(lines.len()), None),
         PdfRange::UntilStakes => end_after(&lines, patterns::PDF_END_STAKES),
         PdfRange::UntilSaldo2 => end_after(&lines, patterns::PDF_END_SALDO_2),
-        PdfRange::UntilKeyword(word) => end_after(&lines, &[word.as_str()]),
+        PdfRange::UntilKeyword { .. } => unreachable!("oben behandelt"),
     };
 
     Selection { lines: lines[..end].iter().filter_map(|l| clean_line(l)).collect(), warning }
+}
+
+/// Stichwortmodus: gezählt wird auf den sichtbaren Zeilen (wie in der Ansicht nummeriert),
+/// nicht auf den Rohzeilen mit Druckerbefehlen. Ohne die gewünschte Nennung: ganze Datei + Warnung.
+fn keyword_selection(lines: &[&str], word: &str, occurrence: usize, offset: i32) -> Selection {
+    let visible: Vec<String> = lines.iter().filter_map(|l| clean_line(l)).collect();
+    let needle = normalize(word);
+    let nth = occurrence.max(1);
+
+    let hits: Vec<usize> = if needle.is_empty() {
+        Vec::new()
+    } else {
+        visible.iter().enumerate().filter(|(_, l)| normalize(l).contains(&needle)).map(|(i, _)| i).collect()
+    };
+
+    match hits.get(nth - 1) {
+        Some(&i) => {
+            let end = (i as i64 + 1 + i64::from(offset)).clamp(0, visible.len() as i64) as usize;
+            Selection { lines: visible[..end].to_vec(), warning: None }
+        }
+        None => {
+            let warning = match hits.len() {
+                0 => format!("Kein Stichwort gefunden ({word}), ganze Datei verwendet"),
+                n => format!("Stichwort \"{word}\" nur {n}-mal gefunden, {nth}. Nennung fehlt, ganze Datei verwendet"),
+            };
+            Selection { lines: visible, warning: Some(warning) }
+        }
+    }
 }
 
 /// Großbuchstaben ohne Leerzeichen und Steuerzeichen: "Saldo  (2)" -> "SALDO(2)".
@@ -201,11 +235,31 @@ mod tests {
 
     #[test]
     fn eigenes_stichwort() {
-        let sel = select_lines(SAMPLE, &PdfRange::UntilKeyword("auswurf".into()));
+        let kw = |word: &str, occurrence, offset| PdfRange::UntilKeyword { word: word.into(), occurrence, offset };
+        let sel = select_lines(SAMPLE, &kw("auswurf", 1, 1));
         assert!(sel.warning.is_none());
         // Stichwortzeile + eine Folgezeile (SALDO), danach ist Schluss (ENDE fehlt)
         assert_eq!(sel.lines.last().map(String::as_str), Some("SALDO (2) : 3,00"));
         assert!(!sel.lines.iter().any(|l| l == "ENDE"));
+    }
+
+    #[test]
+    fn stichwort_nennung_und_zeilenversatz() {
+        let kw = |word: &str, occurrence, offset| PdfRange::UntilKeyword { word: word.into(), occurrence, offset };
+        let text = "A\nSALDO x\n\x1bK!\nB\nSALDO y\nC\nD";
+        // 1. Nennung, Stichwortzeile ist die letzte
+        assert_eq!(lines(text, kw("saldo", 1, 0)), ["A", "SALDO x"]);
+        // 2. Nennung + 1 Zeile danach; Druckerbefehle zählen nicht mit
+        assert_eq!(lines(text, kw("saldo", 2, 1)), ["A", "SALDO x", "B", "SALDO y", "C"]);
+        // minus: davor aufhören
+        assert_eq!(lines(text, kw("saldo", 2, -1)), ["A", "SALDO x", "B"]);
+        // Versatz über die Grenzen schneidet nicht ins Leere
+        assert_eq!(lines(text, kw("saldo", 1, 99)).len(), 6);
+        assert!(lines(text, kw("saldo", 1, -99)).is_empty());
+        // 3. Nennung gibt es nicht
+        let sel = select_lines(text, &kw("saldo", 3, 0));
+        assert_eq!(sel.lines.len(), 6);
+        assert!(sel.warning.is_some_and(|w| w.contains("2-mal")));
     }
 
     #[test]
@@ -216,7 +270,7 @@ mod tests {
         assert!(sel.warning.as_deref().is_some_and(|w| w.contains("EINSAETZE")));
 
         // leeres eigenes Stichwort darf nicht "überall" treffen
-        let sel = select_lines(SAMPLE, &PdfRange::UntilKeyword("  ".into()));
+        let sel = select_lines(SAMPLE, &PdfRange::UntilKeyword { word: "  ".into(), occurrence: 1, offset: 0 });
         assert!(sel.warning.is_some());
     }
 

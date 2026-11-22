@@ -179,10 +179,27 @@ kbd {
   -webkit-user-select: text;
 }
 .field.narrow { width: 64px; }
+.iconfield { position: relative; display: inline-flex; align-items: center; }
+.iconfield .ico { position: absolute; left: 8px; width: 14px; height: 14px; color: var(--text-2); pointer-events: none; }
+.iconfield .field.narrow { width: 76px; padding-left: 28px; }
 .field.wide { width: 100%; }
 .field.mono { font-family: var(--mono); font-size: 12.5px; }
+.field.loc { width: 150px; }
 .search { width: 160px; border-radius: 14px; padding: 0 12px; }
 .search:disabled, .field:disabled { opacity: 0.5; }
+
+/* Zweite Zeile unter der Toolbar: bricht um, statt Optionen abzuschneiden */
+.subbar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--sep);
+}
+.subbar .split { flex-wrap: wrap; }
 
 /* PDF-Button mit Auswahl daneben */
 .split { display: flex; align-items: center; gap: 6px; }
@@ -301,6 +318,19 @@ td.missing { color: var(--text-3); }
   overflow-x: auto;
   user-select: text;
   -webkit-user-select: text;
+}
+/* Zeilennummern: nur Anzeige, nicht markier- oder kopierbar */
+.paper.numbered { counter-reset: line; }
+.paper .ln { display: block; min-height: 1.35em; counter-increment: line; }
+.paper .ln::before {
+  content: counter(line);
+  display: inline-block;
+  min-width: 2.2em;
+  margin-right: 1.2em;
+  text-align: right;
+  color: #8a8a90;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .paper.large { font-size: 15px; padding: 22px 28px 28px; max-height: 70vh; overflow: auto; }
 

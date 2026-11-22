@@ -7,7 +7,8 @@ const { open, save } = window.__TAURI__.dialog;
 
 const $ = (selector) => document.querySelector(selector);
 
-if (/Mac/.test(navigator.userAgent)) document.documentElement.classList.add("macos");
+const isMac = /Mac/.test(navigator.userAgent);
+if (isMac) document.documentElement.classList.add("macos");
 
 // ---------------------------------------------------------------------------
 // Kleine Helfer
@@ -62,6 +63,7 @@ const S = {
   placeholders: [],
   texts: new Map(),      // Bon-Text je Index
   busy: false,
+  outDir: "",            // Zielordner fürs Umbenennen
 };
 
 const sep = () => (S.folder.includes("\\") && !S.folder.includes("/") ? "\\" : "/");
@@ -236,6 +238,13 @@ function cell(row, title) {
   return i === -1 ? "" : row.cells[i];
 }
 
+/** Bon-Text mit Zeilennummern (nur Ansicht, der PDF-Export bleibt unberührt). */
+function showPaper(pre, text, { numbered = true } = {}) {
+  pre.classList.toggle("numbered", numbered);
+  if (!numbered) return void (pre.textContent = text);
+  pre.replaceChildren(...text.split("\n").map((line) => el("span", { class: "ln" }, line)));
+}
+
 async function renderInspector() {
   const index = S.active;
   const row = index === null ? null : S.rows[index];
@@ -259,12 +268,12 @@ async function renderInspector() {
   ].filter(([, value]) => value !== "");
   $("#ins-facts").replaceChildren(...facts.flatMap(([name, value]) => [el("dt", {}, name), el("dd", {}, value)]));
 
-  $("#ins-paper").textContent = "Lade …";
+  showPaper($("#ins-paper"), "Lade …", { numbered: false });
   try {
     const text = await getText(index);
-    if (S.active === index) $("#ins-paper").textContent = text;
+    if (S.active === index) showPaper($("#ins-paper"), text);
   } catch (e) {
-    if (S.active === index) $("#ins-paper").textContent = errorText(e);
+    if (S.active === index) showPaper($("#ins-paper"), errorText(e), { numbered: false });
   }
 }
 
@@ -274,12 +283,12 @@ async function openQuickLook() {
   if (S.active === null) return;
   const row = S.rows[S.active];
   $("#ql-title").textContent = row.file_name;
-  $("#ql-paper").textContent = "Lade …";
+  showPaper($("#ql-paper"), "Lade …", { numbered: false });
   dialog.showModal();
   try {
-    $("#ql-paper").textContent = await getText(row.index);
+    showPaper($("#ql-paper"), await getText(row.index));
   } catch (e) {
-    $("#ql-paper").textContent = errorText(e);
+    showPaper($("#ql-paper"), errorText(e), { numbered: false });
   }
 }
 
@@ -295,7 +304,7 @@ function showEmpty(title, text) {
 }
 
 function setLoaded(loaded) {
-  for (const id of ["#search", "#btn-excel", "#btn-organize", "#btn-pdf"]) $(id).disabled = !loaded || S.busy;
+  for (const id of ["#search", "#location", "#btn-reveal", "#btn-excel", "#btn-organize", "#btn-pdf"]) $(id).disabled = !loaded || S.busy;
 }
 
 async function chooseFolder() {
@@ -320,6 +329,7 @@ async function loadFolder(path) {
       texts: new Map(),
     });
     $("#search").value = "";
+    $("#location").value = result.location;
     S.query = "";
 
     $("#folder-info").replaceChildren(
@@ -333,7 +343,7 @@ async function loadFolder(path) {
       renderTable();
       selectRow(result.rows[0].index);
     } else {
-      showEmpty("Keine Quittungen gefunden", "In diesem Ordner liegen keine .ACK-Dateien. Unterordner werden nicht durchsucht.");
+      showEmpty("Keine Quittungen gefunden", "In diesem Ordner liegen keine .ACK- oder .txt-Dateien. Unterordner werden nicht durchsucht.");
       renderInspector();
       updateStatus();
     }
@@ -391,7 +401,9 @@ function currentRange() {
   if (kind === "keyword") {
     const value = $("#pdf-keyword").value.trim();
     if (!value) throw new Error("Bitte ein Stichwort eingeben.");
-    return { kind, value };
+    const occurrence = parseInt($("#pdf-occ").value, 10) || 1;
+    if (occurrence < 1) throw new Error("Die Nennung muss mindestens 1 sein.");
+    return { kind, value, occurrence, offset: parseInt($("#pdf-offset").value, 10) || 0 };
   }
   return { kind };
 }
@@ -425,6 +437,8 @@ function updatePdfInputs() {
   const kind = $("#pdf-range").value;
   $("#pdf-lines").hidden = kind !== "lines";
   $("#pdf-keyword").hidden = kind !== "keyword";
+  $("#wrap-occ").hidden = kind !== "keyword";
+  $("#wrap-offset").hidden = kind !== "keyword";
 }
 
 // ---------------------------------------------------------------------------
@@ -436,8 +450,8 @@ const orgMode = () => document.querySelector('input[name="org-mode"]:checked').v
 function updateOrganizeTexts() {
   const move = orgMode() === "move";
   $("#org-explain").textContent = move
-    ? `Die Originale werden nach ${S.folder}${sep()}Output${sep()}${S.location} verschoben und verschwinden aus dem aktuellen Ordner.`
-    : `Die Originale bleiben liegen. Kopien entstehen in ${S.folder}${sep()}Output${sep()}${S.location}.`;
+    ? `Die Originale werden nach ${S.outDir} verschoben und verschwinden aus dem aktuellen Ordner.`
+    : `Die Originale bleiben liegen. Kopien entstehen in ${S.outDir}.`;
   $("#org-go").classList.toggle("danger", move);
   $("#org-go").classList.toggle("primary", !move);
   $("#org-go").textContent = move ? "Verschieben" : "Kopieren";
@@ -448,6 +462,7 @@ async function openOrganize() {
   dialog.returnValue = "";
   document.querySelector(`input[name="org-mode"][value="${store.get("mode", "copy")}"]`).checked = true;
   $("#org-scope").textContent = `Betrifft ${scopeText()}. Dateien, die es am Ziel schon gibt, werden nie überschrieben.`;
+  S.outDir = await invoke("output_dir");
   updateOrganizeTexts();
   showPreview($("#org-example"), S.template, S.active, "ACK");
   dialog.showModal();
@@ -544,6 +559,8 @@ function anyDialogOpen() {
 function wireEvents() {
   $("#btn-open").addEventListener("click", chooseFolder);
   $("#btn-open-empty").addEventListener("click", chooseFolder);
+  if (!isMac) $("#btn-reveal").textContent = "Im Explorer zeigen";
+  $("#btn-reveal").addEventListener("click", () => invoke("open_folder").catch((e) => notifyError(e, "Ordner konnte nicht geöffnet werden")));
   $("#btn-excel").addEventListener("click", exportExcel);
   $("#btn-pdf").addEventListener("click", exportPdfs);
   $("#btn-organize").addEventListener("click", openOrganize);
@@ -551,6 +568,14 @@ function wireEvents() {
   $("#btn-quicklook").addEventListener("click", openQuickLook);
   $("#ql-close").addEventListener("click", () => $("#quicklook").close());
   $("#notice-close").addEventListener("click", () => ($("#notice").hidden = true));
+
+  // Aufstellort überschreiben; leer = Ordnername
+  $("#location").addEventListener("change", async (ev) => {
+    S.location = await invoke("set_location", { location: ev.target.value });
+    ev.target.value = S.location;
+    const info = $("#folder-info strong");
+    if (info) info.textContent = S.location;
+  });
 
   $("#search").addEventListener("input", (ev) => {
     S.query = ev.target.value;
@@ -561,6 +586,8 @@ function wireEvents() {
   $("#pdf-range").value = store.get("pdfRange", "all");
   $("#pdf-lines").value = store.get("pdfLines", 20);
   $("#pdf-keyword").value = store.get("pdfKeyword", "");
+  $("#pdf-occ").value = store.get("pdfOcc", 1);
+  $("#pdf-offset").value = store.get("pdfOffset", 0);
   updatePdfInputs();
   $("#pdf-range").addEventListener("change", () => {
     store.set("pdfRange", $("#pdf-range").value);
@@ -568,6 +595,8 @@ function wireEvents() {
   });
   $("#pdf-lines").addEventListener("change", () => store.set("pdfLines", $("#pdf-lines").value));
   $("#pdf-keyword").addEventListener("change", () => store.set("pdfKeyword", $("#pdf-keyword").value));
+  $("#pdf-occ").addEventListener("change", () => store.set("pdfOcc", $("#pdf-occ").value));
+  $("#pdf-offset").addEventListener("change", () => store.set("pdfOffset", $("#pdf-offset").value));
 
   // Einstellungen
   $("#tpl").addEventListener("input", (ev) => setTemplate(ev.target.value));
